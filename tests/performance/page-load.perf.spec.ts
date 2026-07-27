@@ -22,13 +22,17 @@ test.describe('Performance', () => {
     expect(timing.loadEventMs).toBeLessThan(15_000);
   });
 
-  test('product detail page finishes loading within a generous budget', { tag: ['@perf'] }, async ({ page }) => {
-    await page.goto('/prod.html?idp_=1');
+  test(
+    'product detail page finishes loading within a generous budget',
+    { tag: ['@perf'] },
+    async ({ page }) => {
+      await page.goto('/prod.html?idp_=1');
 
-    const timing = await getNavigationTiming(page);
-    console.log('Product detail page navigation timing:', timing);
+      const timing = await getNavigationTiming(page);
+      console.log('Product detail page navigation timing:', timing);
 
-    expect(timing.domContentLoadedMs).toBeGreaterThan(0);
-    expect(timing.loadEventMs).toBeLessThan(15_000);
-  });
+      expect(timing.domContentLoadedMs).toBeGreaterThan(0);
+      expect(timing.loadEventMs).toBeLessThan(15_000);
+    }
+  );
 });

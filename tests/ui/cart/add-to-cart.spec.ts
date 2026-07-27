@@ -8,23 +8,22 @@ test.describe('Add to cart', () => {
   // extend beyond the 30s default to leave room for the rest of each test.
   test.describe.configure({ timeout: 60_000 });
 
-  test('adding a product increases the cart by one and shows its name', { tag: ['@smoke', '@cart'] }, async ({
-    page,
-    productDetailPage,
-    cartPage,
-    cartCleanup,
-  }) => {
-    await cartPage.open();
-    const idsBefore = await cartPage.getRowIdsByName('Samsung galaxy s6');
+  test(
+    'adding a product increases the cart by one and shows its name',
+    { tag: ['@smoke', '@cart'] },
+    async ({ page, productDetailPage, cartPage, cartCleanup }) => {
+      await cartPage.open();
+      const idsBefore = await cartPage.getRowIdsByName('Samsung galaxy s6');
 
-    await page.goto(`/prod.html?idp_=${SAMSUNG_S6_ID}`);
-    const dialogMessage = await productDetailPage.addToCart();
-    expect(dialogMessage).toBe('Product added');
+      await page.goto(`/prod.html?idp_=${SAMSUNG_S6_ID}`);
+      const dialogMessage = await productDetailPage.addToCart();
+      expect(dialogMessage).toBe('Product added');
 
-    await cartPage.open();
-    const [newId] = await cartPage.waitForNewIds('Samsung galaxy s6', idsBefore);
-    cartCleanup.track(newId); // no purchase happens in this test -- teardown must delete it explicitly
-  });
+      await cartPage.open();
+      const [newId] = await cartPage.waitForNewIds('Samsung galaxy s6', idsBefore);
+      cartCleanup.track(newId); // no purchase happens in this test -- teardown must delete it explicitly
+    }
+  );
 
   test(
     'adding the same product twice appends two separate rows, not a quantity increment',

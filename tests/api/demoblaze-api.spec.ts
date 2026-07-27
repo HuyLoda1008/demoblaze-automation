@@ -18,40 +18,49 @@ test.describe('DemoBlaze API', () => {
     }
   });
 
-  test('POST /view returns the matching product for a known id', { tag: ['@api', '@regression'] }, async ({
-    apiClient,
-  }) => {
-    const product = await apiClient.getProduct(1);
+  test(
+    'POST /view returns the matching product for a known id',
+    { tag: ['@api', '@regression'] },
+    async ({ apiClient }) => {
+      const product = await apiClient.getProduct(1);
 
-    expect(product.id).toBe(1);
-    expect(product.title).toBe('Samsung galaxy s6');
-    expect(product.price).toBe(360);
-  });
+      expect(product.id).toBe(1);
+      expect(product.title).toBe('Samsung galaxy s6');
+      expect(product.price).toBe(360);
+    }
+  );
 
-  test('GET /view is rejected -- the endpoint requires POST', { tag: ['@api', '@regression'] }, async ({
-    apiClient,
-  }) => {
-    const status = await apiClient.getProductViaGetStatus(1);
+  test(
+    'GET /view is rejected -- the endpoint requires POST',
+    { tag: ['@api', '@regression'] },
+    async ({ apiClient }) => {
+      const status = await apiClient.getProductViaGetStatus(1);
 
-    expect(status).toBe(405);
-  });
+      expect(status).toBe(405);
+    }
+  );
 
-  test('POST /login with valid credentials succeeds', { tag: ['@api', '@auth'] }, async ({ apiClient, env }) => {
-    const result = await apiClient.login(env.testUser.username, env.testUser.password);
+  test(
+    'POST /login with valid credentials succeeds',
+    { tag: ['@api', '@auth'] },
+    async ({ apiClient, env }) => {
+      const result = await apiClient.login(env.testUser.username, env.testUser.password);
 
-    expect(result.ok).toBeTruthy();
-    expect(result.authToken).toContain('Auth_token');
-    expect(result.errorMessage).toBeNull();
-  });
+      expect(result.ok).toBeTruthy();
+      expect(result.authToken).toContain('Auth_token');
+      expect(result.errorMessage).toBeNull();
+    }
+  );
 
-  test('POST /login with wrong password returns an errorMessage', { tag: ['@api', '@auth'] }, async ({
-    apiClient,
-    env,
-  }) => {
-    const result = await apiClient.login(env.testUser.username, 'definitely-wrong-password');
+  test(
+    'POST /login with wrong password returns an errorMessage',
+    { tag: ['@api', '@auth'] },
+    async ({ apiClient, env }) => {
+      const result = await apiClient.login(env.testUser.username, 'definitely-wrong-password');
 
-    expect(result.ok).toBeTruthy();
-    expect(result.errorMessage).toBe('Wrong password.');
-    expect(result.authToken).toBeNull();
-  });
+      expect(result.ok).toBeTruthy();
+      expect(result.errorMessage).toBe('Wrong password.');
+      expect(result.authToken).toBeNull();
+    }
+  );
 });

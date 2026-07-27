@@ -7,6 +7,29 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Required check for PRs: typecheck + ESLint (including the repo-specific
+  # rule that blocks tests from calling page.click/fill/... directly instead
+  # of going through a page object -- see eslint.config.js) + Prettier
+  # format check. No browser needed, seconds not minutes. This is what
+  # makes CODE_CONVENTIONS.md enforced rather than a checklist nobody
+  # actually verifies -- see the PR template.
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run format:check
+
   # Required check for PRs: fast (~40s), tagged @smoke, one happy-path per
   # feature area. This is the job name to mark as a required status check
   # in GitHub branch protection (Settings > Branches > Branch protection

@@ -69,14 +69,14 @@ The brief names "Playwright (preferred) ... with TypeScript" explicitly.
 harness) was used because it already provides, built-in, everything the
 brief asks a framework to demonstrate:
 
-| Requirement | How it's satisfied |
-|---|---|
-| Cross-browser/platform | `projects` in `playwright.config.ts`: chromium, firefox, webkit, Mobile Chrome |
-| Modular design | Page Object Model under `src/pages/`, composed via fixtures, not inheritance |
-| CI/CD compatibility | GitHub Actions workflow below; JUnit reporter output is the integration point for Jenkins/GitLab CI |
-| Configurable params | `config/environments.ts` + `TEST_ENV`, plus standard Playwright CLI flags |
-| Comprehensive reporting | `list` + `html` + `json` + `junit` reporters, zero custom code |
-| UI / API / regression / performance test types | `tests/ui`, `tests/api`, `tests/regression`, `tests/performance`, selected via tags |
+| Requirement                                    | How it's satisfied                                                                                  |
+| ---------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Cross-browser/platform                         | `projects` in `playwright.config.ts`: chromium, firefox, webkit, Mobile Chrome                      |
+| Modular design                                 | Page Object Model under `src/pages/`, composed via fixtures, not inheritance                        |
+| CI/CD compatibility                            | GitHub Actions workflow below; JUnit reporter output is the integration point for Jenkins/GitLab CI |
+| Configurable params                            | `config/environments.ts` + `TEST_ENV`, plus standard Playwright CLI flags                           |
+| Comprehensive reporting                        | `list` + `html` + `json` + `junit` reporters, zero custom code                                      |
+| UI / API / regression / performance test types | `tests/ui`, `tests/api`, `tests/regression`, `tests/performance`, selected via tags                 |
 
 ### Test account
 
@@ -87,7 +87,7 @@ Signup form and its credentials live in `config/env/prod.env` (gitignored;
 `.example` is committed) and as GitHub Actions secrets for CI. Login specs
 only ever read this account's state; they don't mutate it.
 
-One consequence worth knowing: because this is a *shared* fixed account,
+One consequence worth knowing: because this is a _shared_ fixed account,
 running the full cross-browser project matrix in parallel means multiple
 browsers can authenticate as the same user simultaneously. This is handled
 with a generous assertion timeout (see `tests/ui/auth/login.spec.ts`) rather
@@ -102,31 +102,42 @@ project instead: `npx playwright test --project=chromium --headed`.
 
 ## CI
 
-`.github/workflows/e2e.yml` has two jobs:
+`.github/workflows/e2e.yml` has three jobs:
 
+- **`lint`** -- `typecheck` + `lint` + `format:check` (no browser, seconds
+  not minutes). This is what makes `CODE_CONVENTIONS.md` an enforced gate
+  rather than a checklist a reviewer has to manually verify -- see
+  `eslint.config.js`, which includes a repo-specific
+  `no-restricted-syntax` rule blocking `page.click/fill/...` calls inside
+  `tests/**/*.spec.ts` (the Page Object Model boundary), not just generic
+  style rules.
 - **`smoke`** -- runs on every `push`/`pull_request`, `--grep @smoke` only
-  (~40s). This is the job meant to gate PR merges.
+  (~40s).
 - **`full-suite`** -- the entire cross-browser + regression + api + perf
   matrix. Runs on manual `workflow_dispatch`, or automatically after `smoke`
   passes on a push to `main`. Not run on every PR -- too slow to gate on,
   and per "Known site quirks" below, the full matrix is also where
   shared-backend contention is most likely to surface as flakiness.
 
-**To make `smoke` a required check** (so a PR can't be merged until it
-passes): this is a GitHub branch protection setting, not something in the
-workflow file itself, and needs the repo to actually exist on GitHub first.
-Once pushed: repo Settings -> Branches -> add a protection rule for `main` ->
-enable "Require status checks to pass before merging" -> select `smoke`.
-Equivalently, via `gh`:
+**`lint` and `smoke` are required status checks** on `main` -- a PR can't be
+merged until both pass. This is a GitHub branch protection setting, applied
+via:
 
 ```bash
 gh api repos/:owner/:repo/branches/main/protection \
   --method PUT \
-  --field required_status_checks='{"strict":true,"contexts":["smoke"]}' \
-  --field enforce_admins=true \
-  --field required_pull_request_reviews=null \
-  --field restrictions=null
+  --input - <<'EOF'
+{
+  "required_status_checks": { "strict": true, "contexts": ["smoke", "lint"] },
+  "enforce_admins": false,
+  "required_pull_request_reviews": null,
+  "restrictions": null
+}
+EOF
 ```
+
+(`--field` with a nested JSON value doesn't parse correctly here -- use
+`--input`/stdin as above.)
 
 Also requires `DEMOBLAZE_TEST_USER` / `DEMOBLAZE_TEST_PASSWORD` repo secrets
 (Settings -> Secrets and variables -> Actions) set to the throwaway test
@@ -156,7 +167,7 @@ resource other real visitors are also using.
   live via network capture: clicking Purchase fires
   `POST /deletecart {"cookie":""}`, which clears this browser's cart) --
   DemoBlaze is already doing this cleanup for us. Only cart items that are
-  added but *not* successfully purchased (plain add-to-cart tests, and the
+  added but _not_ successfully purchased (plain add-to-cart tests, and the
   negative checkout specs where validation blocks the purchase) need
   `cartCleanup.track(...)`.
 - **Login session.** The `homePage` fixture in `test-options.ts` logs out
@@ -164,7 +175,7 @@ resource other real visitors are also using.
   shared test account never carries a stray session between runs. Tests
   don't need to call `logout()` themselves unless logout behavior is what's
   under test.
-- **What's *not* torn down, and why:** DemoBlaze has no order history or
+- **What's _not_ torn down, and why:** DemoBlaze has no order history or
   order-cancellation feature anywhere (verified live: nothing appears in the
   nav bar after login besides Cart/Log out, and there's no queryable order
   entity once `purchaseOrder()` completes) -- a placed order is genuinely
@@ -189,7 +200,7 @@ framework -- not guessed from documentation.
   `page.waitForEvent('dialog')` awaited around the click, Chromium's own
   post-click actionability check blocks on the open dialog and the click
   hangs for the full test timeout. Fixed by registering a persistent
-  `page.once('dialog', ...)` listener *before* the click instead -- see the
+  `page.once('dialog', ...)` listener _before_ the click instead -- see the
   comment in `dialog-handler.ts` for the full explanation and the two
   failure modes it had to handle (synchronous vs. network-delayed dialogs).
 - **The cart is not session-isolated -- it's a live, shared, global bucket.**
@@ -199,15 +210,15 @@ framework -- not guessed from documentation.
   traffic from other visitors of this very popular public QA practice site.
   Consequence: an assertion of the form "count grew by N since some earlier
   baseline" is unsafe even with polling -- a baseline captured at a
-  high-traffic peak can look like it *shrank* by the time of the check, even
+  high-traffic peak can look like it _shrank_ by the time of the check, even
   though the product under test is genuinely present. Every cart assertion
-  here checks for a specific product's *presence*, full stop, never a count
+  here checks for a specific product's _presence_, full stop, never a count
   (`CartPage.assertProductAdded` / `waitForOccurrences`) -- an earlier
   baseline-delta version of this logic was replaced after being caught
   failing on real local `--headed` run data during development.
 - **`/addtocart` is eventually consistent under load**, and the confirmation
   dialog can fire before the item is actually queryable via `/viewcart`.
-  Polling handles this -- but the *first* implementation of that polling
+  Polling handles this -- but the _first_ implementation of that polling
   reloaded the cart page on every cycle, which re-triggers the `/viewcart`
   fetch from scratch each time; under load that fetch can take longer than
   one poll interval, so it never got a chance to resolve and the row count
@@ -227,7 +238,7 @@ framework -- not guessed from documentation.
   quantity increment -- confirmed via the `/viewcart` API response (two
   distinct cart-item ids sharing one `prod_id`).
 - **The order form only validates the `Name` field.** Submitting with every
-  field empty, or with only `Name` filled, or with everything *but* `Name`
+  field empty, or with only `Name` filled, or with everything _but_ `Name`
   filled, are all silent no-ops (no confirmation, no visible error). A
   non-numeric credit card value, by contrast, is accepted and shows up
   verbatim in the purchase confirmation -- there is no card-format
