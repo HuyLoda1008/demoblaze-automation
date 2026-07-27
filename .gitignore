@@ -1,0 +1,9 @@
+node_modules/
+reports/
+test-results/
+playwright-report/
+.env
+config/env/prod.env
+*.log
+.DS_Store
+~$*.xlsx

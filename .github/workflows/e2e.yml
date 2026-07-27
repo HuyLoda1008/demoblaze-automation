@@ -1,0 +1,77 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  # Required check for PRs: fast (~40s), tagged @smoke, one happy-path per
+  # feature area. This is the job name to mark as a required status check
+  # in GitHub branch protection (Settings > Branches > Branch protection
+  # rules > Require status checks to pass > "smoke").
+  smoke:
+    name: smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx playwright install --with-deps
+
+      - run: npx playwright test --grep @smoke
+        env:
+          BASE_URL: https://www.demoblaze.com
+          API_BASE_URL: https://api.demoblaze.com
+          TEST_USER: ${{ secrets.DEMOBLAZE_TEST_USER }}
+          TEST_PASSWORD: ${{ secrets.DEMOBLAZE_TEST_PASSWORD }}
+
+      - name: Upload smoke test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-smoke
+          path: reports/
+          retention-days: 14
+
+  # Full cross-browser + regression + api + perf matrix. Not required for
+  # PR merge (too slow to gate every push on) -- runs on manual dispatch, or
+  # automatically after smoke passes on a push to main.
+  full-suite:
+    name: full-suite
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+    needs: smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx playwright install --with-deps
+
+      - run: npx playwright test
+        env:
+          BASE_URL: https://www.demoblaze.com
+          API_BASE_URL: https://api.demoblaze.com
+          TEST_USER: ${{ secrets.DEMOBLAZE_TEST_USER }}
+          TEST_PASSWORD: ${{ secrets.DEMOBLAZE_TEST_PASSWORD }}
+
+      - name: Upload full suite report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-full
+          path: reports/
+          retention-days: 14
