@@ -137,7 +137,9 @@ export class CartPage extends BasePage {
    * exercises the delete UX itself. Prefer deleteRowById for teardown, where
    * precision (not deleting another visitor's same-named row) matters. */
   async deleteRowByName(productName: string): Promise<void> {
-    const row = this.page.locator('#tbodyid tr', { has: this.page.locator(`td:has-text("${productName}")`) }).first();
+    const row = this.page
+      .locator('#tbodyid tr', { has: this.page.locator(`td:has-text("${productName}")`) })
+      .first();
     await row.locator('a', { hasText: 'Delete' }).click();
     await this.page.waitForTimeout(500);
   }

@@ -35,7 +35,8 @@ const loginCases: TestCase[] = [
     preconditions: 'A registered account exists',
     steps: '1. Open Home page\n2. Click "Log in"\n3. Enter valid username/password\n4. Click "Log in" button',
     testData: 'Registered username + correct password',
-    expectedResult: 'Nav bar shows "Welcome <username>"; "Log out" link becomes visible; "Log in"/"Sign up" links hide',
+    expectedResult:
+      'Nav bar shows "Welcome <username>"; "Log out" link becomes visible; "Log in"/"Sign up" links hide',
     notes: '',
   },
   {
@@ -44,7 +45,8 @@ const loginCases: TestCase[] = [
     type: 'Negative',
     priority: 'High',
     preconditions: 'A registered account exists',
-    steps: '1. Open Home page\n2. Click "Log in"\n3. Enter valid username + wrong password\n4. Click "Log in"',
+    steps:
+      '1. Open Home page\n2. Click "Log in"\n3. Enter valid username + wrong password\n4. Click "Log in"',
     testData: 'Registered username + incorrect password',
     expectedResult: 'A native browser alert reads "Wrong password."; user remains logged out',
     notes:
@@ -56,7 +58,8 @@ const loginCases: TestCase[] = [
     type: 'Negative',
     priority: 'High',
     preconditions: 'None',
-    steps: '1. Open Home page\n2. Click "Log in"\n3. Enter a username that has never been registered\n4. Click "Log in"',
+    steps:
+      '1. Open Home page\n2. Click "Log in"\n3. Enter a username that has never been registered\n4. Click "Log in"',
     testData: 'e.g. nonexistent_user_zzz_999 / any password',
     expectedResult: 'A native browser alert reads "User does not exist."',
     notes: 'Verified live (native alert, same as LOGIN-002).',
@@ -78,10 +81,12 @@ const loginCases: TestCase[] = [
     type: 'Negative',
     priority: 'Medium',
     preconditions: 'The username is already registered',
-    steps: '1. Open Home page\n2. Click "Sign up"\n3. Enter the already-registered username + any password\n4. Click "Sign up"',
+    steps:
+      '1. Open Home page\n2. Click "Sign up"\n3. Enter the already-registered username + any password\n4. Click "Sign up"',
     testData: 'An existing username',
     expectedResult: 'A native browser alert reads "This user already exist."',
-    notes: 'Verified live. Same native-alert pattern as login errors; the #errors label is likewise dead markup.',
+    notes:
+      'Verified live. Same native-alert pattern as login errors; the #errors label is likewise dead markup.',
   },
   {
     id: 'LOGIN-006',
@@ -102,7 +107,8 @@ const loginCases: TestCase[] = [
     preconditions: 'A registered account exists',
     steps: '1. Log in with "  username  " (extra spaces) and the correct password',
     testData: 'Registered username padded with spaces',
-    expectedResult: 'A native browser alert reads "User does not exist." -- the value is NOT trimmed server-side',
+    expectedResult:
+      'A native browser alert reads "User does not exist." -- the value is NOT trimmed server-side',
     notes: 'Verified live: whitespace padding is treated as a literally different (nonexistent) username.',
   },
 ];
@@ -187,7 +193,8 @@ const cartCases: TestCase[] = [
     type: 'Negative',
     priority: 'Medium',
     preconditions: 'The cart contains at least one item',
-    steps: '1. Open "Place Order"\n2. Fill Country, City, Card, Month, Year but leave Name empty\n3. Click "Purchase"',
+    steps:
+      '1. Open "Place Order"\n2. Fill Country, City, Card, Month, Year but leave Name empty\n3. Click "Purchase"',
     testData: 'Name=""; all other fields filled with valid values',
     expectedResult: 'No confirmation dialog appears -- Name specifically is required',
     notes: 'Verified live: confirms Name is checked even when every other field is valid.',
@@ -198,7 +205,8 @@ const cartCases: TestCase[] = [
     type: 'Negative',
     priority: 'Low',
     preconditions: 'The cart contains at least one item; other fields filled',
-    steps: '1. Open "Place Order"\n2. Fill Card with a non-numeric string (e.g. "abcd")\n3. Fill remaining fields\n4. Click "Purchase"',
+    steps:
+      '1. Open "Place Order"\n2. Fill Card with a non-numeric string (e.g. "abcd")\n3. Fill remaining fields\n4. Click "Purchase"',
     testData: 'Card="abcd"',
     expectedResult:
       'Purchase SUCCEEDS regardless -- the confirmation dialog shows "Card Number: abcd" verbatim. There is no card-format validation at all.',

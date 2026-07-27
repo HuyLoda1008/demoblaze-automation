@@ -3,6 +3,7 @@ import { HomePage } from '../pages/home.page';
 import { ProductDetailPage } from '../pages/product/product-detail.page';
 import { CartPage } from '../pages/cart/cart.page';
 import { CartCleanup } from './cart-cleanup';
+import { DemoblazeApiClient } from '../utils/api-client';
 import { getEnvConfig, EnvConfig } from '../../config/environments';
 
 interface Fixtures {
@@ -10,6 +11,7 @@ interface Fixtures {
   productDetailPage: ProductDetailPage;
   cartPage: CartPage;
   cartCleanup: CartCleanup;
+  apiClient: DemoblazeApiClient;
   env: EnvConfig;
 }
 
@@ -47,6 +49,9 @@ export const test = base.extend<Fixtures>({
     const cleanup = new CartCleanup(cartPage);
     await use(cleanup);
     await cleanup.cleanup();
+  },
+  apiClient: async ({ request, env }, use) => {
+    await use(new DemoblazeApiClient(request, env.apiBaseUrl));
   },
 });
 

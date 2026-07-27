@@ -4,6 +4,14 @@ These are the conventions this repo already follows, written down so new
 code stays consistent. Not aspirational -- if you find code that violates
 one of these, that's a bug to fix, not a convention to relax.
 
+Some of this is mechanically enforced by the `lint` CI job (`npm run lint` /
+`npm run format:check` / `npm run typecheck`), including one rule specific
+to this repo: `eslint.config.js` blocks `page.click/fill/...` calls inside
+`tests/**/*.spec.ts`, which is what actually enforces the Page Object Model
+section below rather than relying on a reviewer to notice. The rest (naming,
+teardown, comment style) isn't mechanically checkable and still relies on
+review -- call it out if you see it drift.
+
 ## File & folder naming
 
 - Page objects: `kebab-case.page.ts`, one class per file, class name is
@@ -23,8 +31,8 @@ one of these, that's a bug to fix, not a convention to relax.
   when the element has a meaningful accessible role/name -- fall back to
   `page.locator('#id')`/attribute selectors only when there's no role to
   target, or when precision requires it (see "Locator precision" below).
-- A page object's methods are the *actions and queries a user/tester would
-  describe in plain language* (`login()`, `getConfirmation()`,
+- A page object's methods are the _actions and queries a user/tester would
+  describe in plain language_ (`login()`, `getConfirmation()`,
   `assertProductAdded()`), not raw Playwright calls re-exposed 1:1. If a
   test needs `.click()` on something with no semantic meaning of its own,
   that's a sign the page object is missing a named method for it.
@@ -51,7 +59,7 @@ development (see README "Known site quirks"):
    trigger `alert()`/`confirm()` synchronously inside its own event handler
    (no network round-trip first), don't use
    `page.waitForEvent('dialog')` awaited around the click -- register a
-   persistent `page.once('dialog', ...)` listener *before* the click
+   persistent `page.once('dialog', ...)` listener _before_ the click
    instead. See `src/utils/dialog-handler.ts` for the full explanation and
    use `withDialog()` from there rather than re-implementing this per page
    object.
@@ -60,7 +68,7 @@ development (see README "Known site quirks"):
 
 - Prefer `expect(locator).toX()` (auto-retrying, web-first) over reading a
   value with `await locator.something()` and asserting on the plain value,
-  *unless* the page object method already handles retrying/polling itself
+  _unless_ the page object method already handles retrying/polling itself
   (e.g. `CartPage.waitForNewIds`) -- don't double up on retry logic.
 - After filling a form field under conditions where the fill might not
   "stick" on the first attempt (see `LoginModalPage.fillCredentials`),
@@ -69,7 +77,7 @@ development (see README "Known site quirks"):
 - **Never assert an absolute or relative-to-a-remembered-baseline count**
   against anything backed by DemoBlaze's shared cart. It swings in both
   directions under real concurrent traffic (verified live). Assert
-  *presence* (`toContain`, or the `waitForNewIds`/`getRowIdsByName`
+  _presence_ (`toContain`, or the `waitForNewIds`/`getRowIdsByName`
   diff-based helpers), never `rows.length === N` or `count >= baseline + N`.
 
 ## Tags
@@ -77,14 +85,14 @@ development (see README "Known site quirks"):
 Fixed vocabulary, applied via the second `test()` argument
 (`{ tag: ['@smoke', '@cart'] }`), not free-text:
 
-| Tag | Meaning |
-|---|---|
-| `@smoke` | Fast, must-pass-on-every-PR subset. One happy-path per feature area. |
-| `@regression` | Broader negative/edge coverage, not required on every push. |
-| `@auth` | Touches login/signup/logout. |
-| `@cart` | Touches cart/checkout. |
-| `@api` | `tests/api/**`, uses the `request` fixture, no browser. |
-| `@perf` | `tests/performance/**`, navigation-timing checks. |
+| Tag           | Meaning                                                              |
+| ------------- | -------------------------------------------------------------------- |
+| `@smoke`      | Fast, must-pass-on-every-PR subset. One happy-path per feature area. |
+| `@regression` | Broader negative/edge coverage, not required on every push.          |
+| `@auth`       | Touches login/signup/logout.                                         |
+| `@cart`       | Touches cart/checkout.                                               |
+| `@api`        | `tests/api/**`, uses the `request` fixture, no browser.              |
+| `@perf`       | `tests/performance/**`, navigation-timing checks.                    |
 
 Every test gets at least one of `@smoke`/`@regression`, plus a feature tag.
 Don't invent a new tag for a one-off need -- add a row to this table first
@@ -93,7 +101,7 @@ so the vocabulary stays enumerable and `--grep` selections stay predictable.
 ## Teardown
 
 Every test that mutates shared state cleans up after itself: a fixture
-teardown that runs *unconditionally* after the test body, including on
+teardown that runs _unconditionally_ after the test body, including on
 failure, and treats individual cleanup failures as best-effort
 (`console.warn`, not a thrown error that masks the real test result).
 

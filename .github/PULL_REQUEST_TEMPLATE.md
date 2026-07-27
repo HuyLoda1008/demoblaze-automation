@@ -11,17 +11,19 @@
 
 ## Verification
 
-<!-- Every change in this repo is verified by actually running it -- see
-CODE_CONVENTIONS.md. Fill in what you ran, not just "tests pass." -->
+CI enforces `npm run typecheck`, `npm run lint` (including the
+`no-restricted-syntax` rule that blocks tests from driving the DOM directly
+instead of through a page object), and `npm run format:check` on every PR
+via the `lint` job -- see `eslint.config.js` / `CODE_CONVENTIONS.md`. The
+`smoke` job enforces `--grep @smoke` passing. Both are required checks; a
+failing PR can't be merged. No need to self-report these here.
 
-- [ ] `npm run typecheck` passes
-- [ ] `npm run test:smoke` passes locally
+What CI can't verify -- fill in what you actually observed, not just that a
+command exited 0:
+
 - [ ] Ran the specific spec(s) touched by this PR and confirmed the intended
-      behavior (not just that Playwright exited 0) -- describe what you
-      observed:
-
-  <!-- e.g. "ran login.spec.ts headed, watched the dialog fire and get
-  handled correctly" -->
+      behavior (e.g. "ran login.spec.ts headed, watched the dialog fire and
+      get handled correctly"):
 
 - [ ] If this PR adds a test that mutates cart/account state, it tracks
       cleanup via `cartCleanup` (or explains in this PR why it doesn't need
