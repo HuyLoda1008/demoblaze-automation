@@ -49,6 +49,7 @@ src/
     cart/cart.page.ts    checkout/order-modal.page.ts
   fixtures/test-options.ts   # wires page objects + env into Playwright Test's fixture system
   fixtures/cart-cleanup.ts   # teardown collector for cart items (see "Teardown" below)
+  utils/api-client.ts        # DemoblazeApiClient -- every api.demoblaze.com call, named + typed
   utils/dialog-handler.ts    # shared native-alert handling (see "Gotchas" below)
   utils/perf-utils.ts        # navigation-timing helper
 tests/
@@ -254,10 +255,18 @@ framework -- not guessed from documentation.
   (product detail) are fully covered including a negative case (GET instead
   of POST -> 405). `/login` is covered for the success and wrong-password
   paths using shapes confirmed live (`{ username, password: base64(...) }`
-  request; `{ errorMessage }` on failure). `/addtocart`/`/viewcart` are
-  exercised indirectly through the UI cart specs rather than duplicated as
-  standalone API tests, since their real value here is what the UI does
-  with them.
+  request; a JSON string token on success, `{ errorMessage }` on failure --
+  see `src/utils/api-client.ts` for the full writeup of that shape, which
+  was corrected once already after a real CI run caught an earlier wrong
+  assumption). `/addtocart`/`/viewcart` are exercised indirectly through the
+  UI cart specs rather than duplicated as standalone API tests, since their
+  real value here is what the UI does with them.
+- **Every `api.demoblaze.com` call goes through `DemoblazeApiClient`**
+  (`src/utils/api-client.ts`), wired in as the `apiClient` fixture -- specs
+  call named, typed methods (`getProductCatalog()`, `login()`, ...) instead
+  of building `request.get/post(...)` calls inline. Centralizing it here
+  means a response-shape fix (like the JSON-string-token correction above)
+  happens in one place, not in every spec that happens to hit that endpoint.
 
 ## Architecture decisions worth calling out
 
