@@ -32,6 +32,8 @@ npm run test:headed      # any of the above with --headed for local debugging
 npm run report           # open the last HTML report
 npm run gen:testcases    # regenerate test-cases/test-cases.xlsx
 npm run typecheck        # tsc --noEmit
+npm run lint             # eslint . --max-warnings 0
+npm run format:check     # prettier --check .
 ```
 
 Tag-based selection also works directly: `npx playwright test --grep @auth`.
@@ -59,6 +61,7 @@ tests/
   performance/page-load.perf.spec.ts
 test-cases/
   generate-xlsx.ts       # typed source of truth -> test-cases.xlsx (deliverable #1)
+eslint.config.js         # lint rules, incl. the Page Object Model boundary check (see CI below)
 .github/workflows/e2e.yml
 ```
 
