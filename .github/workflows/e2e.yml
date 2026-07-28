@@ -69,12 +69,20 @@ jobs:
 
   # Full cross-browser + regression + api + perf matrix. Not required for
   # PR merge (too slow to gate every push on) -- runs on manual dispatch, or
-  # automatically after smoke passes on a push to main.
+  # automatically after smoke passes on a push to main. Sharded across 3
+  # parallel jobs (--shard=N/3) since this is the one job running the
+  # entire cross-browser matrix -- each shard uploads a `blob` report
+  # (not html/json/junit directly; blob is the format merge-reports
+  # consumes), merged back into a single report by merge-reports below.
   full-suite:
-    name: full-suite
+    name: full-suite (shard ${{ matrix.shard }}/3)
     if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
     needs: smoke
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     steps:
       - uses: actions/checkout@v4
 
@@ -87,12 +95,59 @@ jobs:
 
       - run: npx playwright install --with-deps
 
-      - run: npx playwright test
+      - run: npx playwright test --shard=${{ matrix.shard }}/3 --reporter=blob
         env:
           BASE_URL: https://www.demoblaze.com
           API_BASE_URL: https://api.demoblaze.com
           TEST_USER: ${{ secrets.DEMOBLAZE_TEST_USER }}
           TEST_PASSWORD: ${{ secrets.DEMOBLAZE_TEST_PASSWORD }}
+
+      - name: Upload blob report (shard ${{ matrix.shard }})
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: blob-report-${{ matrix.shard }}
+          path: blob-report/
+          retention-days: 14
+
+  # Merges the 3 shards' blob reports into the single html/json/junit
+  # report the rest of the pipeline expects (e.g. publish-report). Verified
+  # live that `--reporter=html` on this command OVERRIDES the config's
+  # reporter list entirely, including the html reporter's `outputFolder`
+  # option -- it silently writes to the default `playwright-report/`
+  # instead of `reports/html`. Omitting `--reporter` and passing only
+  # `--config` is what makes merge-reports actually use the full reporter
+  # list (list/html/json/junit) from playwright.config.ts, output paths
+  # included.
+  merge-reports:
+    name: merge-reports
+    # `always()` alone isn't enough -- verified live on a PR run that
+    # full-suite's own `if:` condition means it's SKIPPED (not failed) on
+    # every pull_request event, but `needs: full-suite` + `always()` still
+    # let this job attempt to run anyway, downloading blob-report-*
+    # artifacts that were never uploaded and failing at that step. Repeats
+    # full-suite's exact gate here so this only runs when full-suite
+    # actually ran (pass OR fail -- always() still matters for that case).
+    if: ${{ always() && (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) }}
+    needs: full-suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: blob-report-*
+          path: all-blob-reports
+          merge-multiple: true
+
+      - run: npx playwright merge-reports --config=playwright.config.ts all-blob-reports
 
       - name: Upload full suite report
         if: always()
