@@ -118,7 +118,14 @@ jobs:
   # included.
   merge-reports:
     name: merge-reports
-    if: always()
+    # `always()` alone isn't enough -- verified live on a PR run that
+    # full-suite's own `if:` condition means it's SKIPPED (not failed) on
+    # every pull_request event, but `needs: full-suite` + `always()` still
+    # let this job attempt to run anyway, downloading blob-report-*
+    # artifacts that were never uploaded and failing at that step. Repeats
+    # full-suite's exact gate here so this only runs when full-suite
+    # actually ran (pass OR fail -- always() still matters for that case).
+    if: ${{ always() && (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) }}
     needs: full-suite
     runs-on: ubuntu-latest
     steps:
