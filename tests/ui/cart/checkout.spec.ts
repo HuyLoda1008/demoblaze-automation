@@ -6,15 +6,21 @@ test.describe('Checkout', () => {
   test(
     'add to cart then place an order completes with a purchase confirmation',
     { tag: ['@smoke', '@cart'] },
-    async ({ page, productDetailPage, cartPage }) => {
+    async ({ productDetailPage, cartPage }) => {
       // No cartCleanup tracking needed here: a successful purchase calls
       // DemoBlaze's own POST /deletecart as a side effect (verified live via
       // network capture), which clears this browser's cart items itself.
-      await page.goto(`/prod.html?idp_=${NOKIA_ID}`);
-      await productDetailPage.addToCart();
+      await productDetailPage.open(NOKIA_ID);
+      expect(await productDetailPage.isLoaded()).toBe(true);
+      const dialogMessage = await productDetailPage.addToCart();
+      expect(dialogMessage).toBe('Product added');
 
       await cartPage.open();
+      expect(await cartPage.isLoaded()).toBe(true);
+
       await cartPage.clickPlaceOrder();
+      expect(await cartPage.orderModal.isLoaded()).toBe(true);
+
       await cartPage.orderModal.fillOrderForm({
         name: 'QA Automation',
         country: 'Vietnam',
@@ -35,14 +41,18 @@ test.describe('Checkout', () => {
   test(
     'submitting the order form with all fields empty is a silent no-op (no confirmation, no error)',
     { tag: ['@regression', '@cart'] },
-    async ({ page, productDetailPage, cartPage, cartCleanup }) => {
+    async ({ productDetailPage, cartPage, cartCleanup }) => {
       await cartPage.open();
+      expect(await cartPage.isLoaded()).toBe(true);
       const idsBefore = await cartPage.getRowIdsByName('Nokia lumia 1520');
 
-      await page.goto(`/prod.html?idp_=${NOKIA_ID}`);
-      await productDetailPage.addToCart();
+      await productDetailPage.open(NOKIA_ID);
+      expect(await productDetailPage.isLoaded()).toBe(true);
+      const dialogMessage = await productDetailPage.addToCart();
+      expect(dialogMessage).toBe('Product added');
 
       await cartPage.open();
+      expect(await cartPage.isLoaded()).toBe(true);
       const [newId] = await cartPage.waitForNewIds('Nokia lumia 1520', idsBefore);
       // Purchase is blocked by validation below, so DemoBlaze's own
       // POST /deletecart-on-purchase-success never fires -- this item stays
@@ -50,6 +60,8 @@ test.describe('Checkout', () => {
       cartCleanup.track(newId);
 
       await cartPage.clickPlaceOrder();
+      expect(await cartPage.orderModal.isLoaded()).toBe(true);
+
       await cartPage.orderModal.purchase();
 
       // Verified live: DemoBlaze does not show a confirmation nor any visible
