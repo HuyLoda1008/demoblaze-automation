@@ -4,8 +4,9 @@ E2E automation framework (Playwright + TypeScript) covering the **Login** and
 **Cart** features of [demoblaze.com](https://www.demoblaze.com/), built as a
 QA Automation take-home submission.
 
-**Demo video** (login -> add to cart -> place order, recorded with
-`npm run demo`): _TODO: paste Loom/YouTube link here_
+**Demo video**: [`demo/login-cart-checkout-demo.webm`](demo/login-cart-checkout-demo.webm)
+-- login -> add to cart -> place order, recorded with `npm run demo` (click
+through to GitHub's file view to play it inline).
 
 Contributing? See [`CODE_CONVENTIONS.md`](CODE_CONVENTIONS.md) for naming,
 locator, assertion, and teardown conventions before adding a page object or
@@ -35,6 +36,8 @@ npm run test:headed      # any of the above with --headed for local debugging
 npm run report           # open the last HTML report
 npm run gen:testcases    # regenerate test-cases/test-cases.xlsx
 npm run typecheck        # tsc --noEmit
+npm run lint             # eslint . --max-warnings 0
+npm run format:check     # prettier --check .
 npm run demo             # record a video of the login -> add-to-cart -> place-order flow
 ```
 
@@ -42,8 +45,8 @@ npm run demo             # record a video of the login -> add-to-cart -> place-o
 same page objects the suite uses (`HomePage`, `ProductDetailPage`, `CartPage`) to drive a
 single headed, paced-out run of the brief's "Automation Implementation Demo" flow and records
 it to `demo/login-cart-checkout-demo.webm` via Playwright's built-in video recording -- no
-external screen-recording tool needed. The output file isn't committed (see `.gitignore`); it's
-meant to be uploaded to a video host separately, not stored in the repo as a binary.
+external screen-recording tool needed. That file is committed (~2.7MB, well under GitHub's
+limits) and linked at the top of this README; re-running `npm run demo` overwrites it in place.
 
 Tag-based selection also works directly: `npx playwright test --grep @auth`.
 
@@ -70,6 +73,7 @@ tests/
   performance/page-load.perf.spec.ts
 test-cases/
   generate-xlsx.ts       # typed source of truth -> test-cases.xlsx (deliverable #1)
+eslint.config.js         # lint rules, incl. the Page Object Model boundary check (see CI below)
 .github/workflows/e2e.yml
 ```
 
