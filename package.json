@@ -9,6 +9,7 @@
     "test:regression": "playwright test --grep @regression",
     "test:api": "playwright test tests/api",
     "test:perf": "playwright test tests/performance",
+    "test:unit": "playwright test tests/unit --project=chromium",
     "test:headed": "playwright test --headed",
     "report": "playwright show-report reports/html",
     "gen:testcases": "tsx test-cases/generate-xlsx.ts",
