@@ -7,3 +7,6 @@ config/env/prod.env
 *.log
 .DS_Store
 ~$*.xlsx
+# demo/login-cart-checkout-demo.webm is intentionally committed (linked from
+# README) -- only the intermediate raw recording dir is ignored.
+demo/output/
