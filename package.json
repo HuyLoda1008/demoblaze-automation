@@ -10,6 +10,7 @@
     "test:api": "playwright test tests/api",
     "test:perf": "playwright test tests/performance",
     "test:a11y": "playwright test tests/accessibility",
+    "test:unit": "playwright test tests/unit --project=chromium",
     "test:headed": "playwright test --headed",
     "report": "playwright show-report reports/html",
     "gen:testcases": "tsx test-cases/generate-xlsx.ts",

@@ -10,8 +10,10 @@ jobs:
   # Required check for PRs: typecheck + ESLint (including the repo-specific
   # rule that blocks tests from calling page.click/fill/... directly instead
   # of going through a page object -- see eslint.config.js) + Prettier
-  # format check. No browser needed, seconds not minutes. This is what
-  # makes CODE_CONVENTIONS.md enforced rather than a checklist nobody
+  # format check + unit tests (tests/unit -- pure logic, no browser needed,
+  # so they run here instead of waiting on the smoke job's browser install).
+  # Whole job runs in seconds, not minutes. This is what makes
+  # CODE_CONVENTIONS.md an enforced gate rather than a checklist nobody
   # actually verifies -- see the PR template.
   lint:
     name: lint
@@ -29,6 +31,7 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run format:check
+      - run: npm run test:unit
 
   # Required check for PRs: fast (~40s), tagged @smoke, one happy-path per
   # feature area. This is the job name to mark as a required status check
@@ -98,3 +101,47 @@ jobs:
           name: playwright-report-full
           path: reports/
           retention-days: 14
+
+  # Builds and pushes the test-runner image (Dockerfile) to GitHub
+  # Container Registry -- ghcr.io, tied to this repo via GITHUB_TOKEN, no
+  # separate registry account needed. Gated on smoke passing first (only
+  # publish an image that at least smoke-tested clean) and push-to-main
+  # only, matching full-suite's trigger scope. See k8s/ for what consumes
+  # this image (currently references `demoblaze-automation:local`, built
+  # locally for the verified kind-cluster workflow in the README -- a real
+  # cluster would instead reference ghcr.io/<owner>/demoblaze-automation).
+  publish-image:
+    name: publish-image
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    needs: smoke
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=latest
+            type=sha,format=long
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
