@@ -1,0 +1,32 @@
+version: 2
+updates:
+  # npm audit flagged vulnerabilities during the Docker build (see
+  # Dockerfile) -- this is the ongoing mechanism instead of a one-time
+  # manual fix, so dependency CVEs surface as PRs automatically.
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    open-pull-requests-limit: 10
+    groups:
+      playwright:
+        patterns:
+          - '@playwright/*'
+          - 'playwright*'
+
+  # Keeps actions/checkout, actions/setup-node, etc. (see e2e.yml) pinned
+  # versions from silently drifting out of date -- the same reasoning as
+  # npm deps, just a different ecosystem.
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+
+  # Dockerfile pins mcr.microsoft.com/playwright:v1.62.0-noble explicitly
+  # (must match the @playwright/test npm version -- see the Dockerfile
+  # comment) -- Dependabot flags when it drifts instead of it going stale
+  # silently.
+  - package-ecosystem: 'docker'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
