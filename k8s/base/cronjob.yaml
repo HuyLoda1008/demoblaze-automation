@@ -1,0 +1,39 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: demoblaze-tests
+spec:
+  # Overridden per overlay -- this base value is intentionally never
+  # deployed as-is (kustomize patches it in every overlay).
+  schedule: '0 0 31 2 *' # Feb 31st -- never fires; forces every overlay to set a real one
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 900
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: playwright-tests
+              image: demoblaze-automation:local
+              # Overridden per overlay to select the run profile (tag set).
+              args: ['--grep', '@smoke']
+              envFrom:
+                - configMapRef:
+                    name: demoblaze-test-config
+                - secretRef:
+                    name: demoblaze-test-credentials
+              resources:
+                requests:
+                  cpu: 500m
+                  memory: 1Gi
+                limits:
+                  cpu: '2'
+                  # Playwright launches chromium/firefox/webkit/Mobile
+                  # Chrome as separate processes even for a small @smoke
+                  # subset -- verified live that 1Gi OOM-killed the pod;
+                  # 2Gi is the real observed floor, not a guess.
+                  memory: 2Gi
