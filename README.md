@@ -46,6 +46,7 @@ npm run test:regression  # broader negative/edge coverage, tagged @regression
 npm run test:api         # API-only specs (no browser, sub-second each)
 npm run test:unit        # pure-logic unit tests (Zod schemas, env config), no browser
 npm run test:perf        # navigation-timing smoke checks
+npm run test:a11y        # axe-core accessibility checks (Home/Product/Cart)
 npm run test:headed      # any of the above with --headed for local debugging
 npm run report           # open the last HTML report
 npm run gen:testcases    # regenerate test-cases/test-cases.xlsx
@@ -88,6 +89,7 @@ tests/
   regression/cart-and-checkout.regression.spec.ts
   api/demoblaze-api.spec.ts       (Playwright's `request` fixture, no browser)
   performance/page-load.perf.spec.ts
+  accessibility/a11y.spec.ts      (axe-core, allowlist-based -- see "Known site quirks")
   unit/api-client-schemas.spec.ts, environments.spec.ts   (pure logic, no browser/network)
 test-cases/
   generate-xlsx.ts       # typed source of truth -> test-cases.xlsx (deliverable #1)
@@ -135,7 +137,7 @@ project instead: `npx playwright test --project=chromium --headed`.
 
 ## CI
 
-`.github/workflows/e2e.yml` has five jobs:
+`.github/workflows/e2e.yml` has six jobs:
 
 - **`lint`** -- `typecheck` + `lint` + `format:check` + `test:unit` (no
   browser, seconds not minutes). This is what makes `CODE_CONVENTIONS.md`
@@ -153,9 +155,21 @@ project instead: `npx playwright test --project=chromium --headed`.
   matrix. Runs on manual `workflow_dispatch`, or automatically after `smoke`
   passes on a push to `main`. Not run on every PR -- too slow to gate on,
   and per "Known site quirks" below, the full matrix is also where
-  shared-backend contention is most likely to surface as flakiness.
-- **`publish-report`** -- deploys `full-suite`'s HTML report (trace viewer,
-  screenshots, per-test timing) to **GitHub Pages** at
+  shared-backend contention is most likely to surface as flakiness. Sharded
+  3-way (`--shard=N/3`) so the matrix runs in parallel instead of one long
+  serial job; each shard uploads a Playwright `blob` report (an
+  intermediate format, not html/json/junit directly).
+- **`merge-reports`** -- combines the 3 shards' blob reports back into a
+  single `html`/`json`/`junit` report via `npx playwright merge-reports`.
+  Worth a callout: `--reporter=html` on that command overrides the config's
+  entire reporter list, including the html reporter's `outputFolder`
+  option -- verified live that it silently writes to the default
+  `playwright-report/` instead of `reports/html`. The fix is to pass only
+  `--config=playwright.config.ts` and no `--reporter` flag, so
+  `merge-reports` picks up the full `list`/`html`/`json`/`junit` reporter
+  array (output paths included) from the config itself.
+- **`publish-report`** -- deploys `merge-reports`'s HTML report (trace
+  viewer, screenshots, per-test timing) to **GitHub Pages** at
   <https://huyloda1008.github.io/demoblaze-automation/> -- only after a push
   to `main`, never on a PR, and via `if: always()` so a failing run still
   publishes its report rather than leaving the live page on a stale passing
@@ -406,6 +420,16 @@ framework -- not guessed from documentation.
   `text=Place Order` locator ambiguously substring-matches the order modal's
   own heading, "Place order" (case-insensitive), causing a strict-mode
   violation.
+- **The Home page's accessibility violation set isn't fully deterministic
+  run to run.** `tests/accessibility/a11y.spec.ts` originally asserted an
+  exact list of `axe-core` violation ids per page; re-running the Home page
+  check three times in a row (same browser, same machine) showed
+  `link-name` flipping in and out, consistent with dynamic content
+  (rotating catalog/ad elements) rather than test flakiness. Fixed by
+  asserting every violation found is a member of a known-issues allowlist
+  (still fails on a genuinely new violation TYPE) instead of an exact
+  match, plus a standing assertion that the one violation confirmed
+  present on every run (`image-alt`, critical) never silently disappears.
 
 ## What's intentionally scoped down
 

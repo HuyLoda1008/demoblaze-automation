@@ -9,6 +9,7 @@
     "test:regression": "playwright test --grep @regression",
     "test:api": "playwright test tests/api",
     "test:perf": "playwright test tests/performance",
+    "test:a11y": "playwright test tests/accessibility",
     "test:unit": "playwright test tests/unit --project=chromium",
     "test:headed": "playwright test --headed",
     "report": "playwright show-report reports/html",
@@ -27,6 +28,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.62.0",
     "@types/node": "^26.1.1",
