@@ -184,7 +184,7 @@ jobs:
           name: playwright-report-full
           path: reports-full
 
-      - uses: actions/configure-pages@v5
+      - uses: actions/configure-pages@v6
 
       - uses: actions/upload-pages-artifact@v3
         with:
