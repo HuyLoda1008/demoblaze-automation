@@ -1,5 +1,7 @@
 # DemoBlaze Automation
 
+[![E2E Tests](https://github.com/HuyLoda1008/demoblaze-automation/actions/workflows/e2e.yml/badge.svg)](https://github.com/HuyLoda1008/demoblaze-automation/actions/workflows/e2e.yml)
+
 E2E automation framework (Playwright + TypeScript) covering the **Login** and
 **Cart** features of [demoblaze.com](https://www.demoblaze.com/), built as a
 QA Automation take-home submission.
