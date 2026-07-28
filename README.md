@@ -293,22 +293,44 @@ framework -- not guessed from documentation.
   integration point for the other two -- a Jenkinsfile would add a
   `junit 'reports/junit.xml'` post-build step, and GitLab CI would reference
   it under `artifacts: reports:`.
-- **API coverage** is intentionally partial: `/entries` (catalog) and `/view`
-  (product detail) are fully covered including a negative case (GET instead
-  of POST -> 405). `/login` is covered for the success and wrong-password
-  paths using shapes confirmed live (`{ username, password: base64(...) }`
-  request; a JSON string token on success, `{ errorMessage }` on failure --
-  see `src/utils/api-client.ts` for the full writeup of that shape, which
-  was corrected once already after a real CI run caught an earlier wrong
-  assumption). `/addtocart`/`/viewcart` are exercised indirectly through the
-  UI cart specs rather than duplicated as standalone API tests, since their
-  real value here is what the UI does with them.
+- **DemoBlaze does NOT use conventional HTTP status codes for most
+  business-logic errors** -- verified live and covered explicitly, not
+  assumed: an unknown product id, a missing `id` field, a wrong password, a
+  nonexistent username, and a missing login field all return `200` with an
+  `{ errorMessage }` body, not a `4xx`. The two places that _do_ use a real
+  status code are also covered: `GET /view` (should be `POST`) -> `405`, and
+  a genuinely unknown route -> `404`. One more was found and documented
+  rather than smoothed over: `POST /view` with a non-numeric `id` (e.g.
+  `"abc"`) crashes the server with an unhandled `500` -- a real DemoBlaze
+  bug, asserted on directly (`tests/api/demoblaze-api.spec.ts`) instead of
+  being avoided. Also caught live: a missing `id` produces a _different_
+  error message ("Product not found.") than an unrecognized id ("Not
+  found."), and a missing login `password` reports "Bad parameter, missing
+  username" -- a real message-labeling bug, not a typo in this suite.
+- **Responses are validated against a runtime schema, not just spot-checked
+  fields.** `src/utils/api-client.ts` defines Zod schemas (`ProductSchema`,
+  `ProductCatalogSchema`, `ApiErrorSchema`, `AuthTokenSchema`) and calls
+  `.parse()`/`.safeParse()` on every response -- a TS interface alone only
+  checks what the code _assumes_ the shape is at compile time; it says
+  nothing about what the server actually returned on a given run.
+  `getProductCatalog()` throws immediately if the catalog doesn't match its
+  schema, so every test that calls it gets schema validation for free, not
+  just the one test file that explicitly asserts on it.
+- **API coverage is intentionally partial elsewhere**: `/addtocart`/`/viewcart`
+  are exercised indirectly through the UI cart specs rather than duplicated
+  as standalone API tests, since their real value here is what the UI does
+  with them, not the raw HTTP contract.
 - **Every `api.demoblaze.com` call goes through `DemoblazeApiClient`**
   (`src/utils/api-client.ts`), wired in as the `apiClient` fixture -- specs
   call named, typed methods (`getProductCatalog()`, `login()`, ...) instead
   of building `request.get/post(...)` calls inline. Centralizing it here
-  means a response-shape fix (like the JSON-string-token correction above)
-  happens in one place, not in every spec that happens to hit that endpoint.
+  means a response-shape fix (like the JSON-string-token correction found
+  earlier, or the schema/error-code coverage above) happens in one place,
+  not in every spec that happens to hit that endpoint. Two tests
+  deliberately bypass the client with a raw `request.post(...)` call
+  instead -- see the inline comments in the spec file -- specifically to
+  send a malformed payload (a field omitted entirely) that the client's own
+  methods don't construct, since they always build well-formed requests.
 
 ## Architecture decisions worth calling out
 
