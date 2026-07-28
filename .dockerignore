@@ -1,0 +1,10 @@
+node_modules
+test-results
+reports
+playwright-report
+demo
+test-cases
+.git
+# Real credentials -- never bake these into an image; the k8s Secret
+# injects TEST_USER/TEST_PASSWORD as env vars at runtime instead.
+config/env/prod.env

@@ -174,6 +174,107 @@ Also requires `DEMOBLAZE_TEST_USER` / `DEMOBLAZE_TEST_PASSWORD` repo secrets
 (Settings -> Secrets and variables -> Actions) set to the throwaway test
 account's credentials -- see "Test account" above.
 
+## Kubernetes deployment (optional)
+
+The brief lists CI/CD as a requirement, which GitHub Actions above already
+satisfies end to end. This section is an additional, optional path: running
+the same suite as a scheduled **k8s CronJob** instead of (or alongside)
+GitHub Actions -- useful if you want the suite running somewhere that isn't
+tied to a GitHub-hosted runner.
+
+There's a real constraint worth naming up front: DemoBlaze has exactly one
+live environment (see "Test account" / `config/environments.ts`), so
+"testing / staging / production" here can't mean three different DemoBlaze
+targets -- there's only one. What it means instead is three different **run
+profiles** against that one target, as three namespaces:
+
+| Namespace              | Schedule              | What runs     | Why                                    |
+| ---------------------- | --------------------- | ------------- | -------------------------------------- |
+| `demoblaze-testing`    | every 15 min          | `@smoke`      | fast, frequent signal                  |
+| `demoblaze-staging`    | nightly (`0 2 * * *`) | `@regression` | broader coverage, off-peak             |
+| `demoblaze-production` | weekly (`0 3 * * 0`)  | full suite    | everything, incl. `@perf`, least often |
+
+`git` branching is untouched by this -- `main` stays the single trunk (PRs
+
+- required CI checks, as set up above). Namespace/run-profile selection
+  happens entirely in `k8s/`, via [Kustomize](https://kustomize.io/) overlays
+  (built into `kubectl`, no extra tooling):
+
+```
+k8s/
+  base/                    # CronJob + ConfigMap shared by all three
+  overlays/
+    testing/                # patches: schedule, tag filter, namespace
+    staging/
+    production/
+```
+
+### What's actually verified here (and what isn't)
+
+Live-verified end to end on a local cluster, not just written and assumed
+to work:
+
+1. `docker build -t demoblaze-automation:local .` -- the image matches the
+   `@playwright/test` version pinned in `package.json`
+   (`mcr.microsoft.com/playwright:v1.62.0-noble`); confirmed the real
+   `config/env/prod.env` is **not** baked into the image (it's gitignored
+   and additionally excluded via `.dockerignore` -- credentials only ever
+   reach the container as env vars from a k8s Secret, never from a file in
+   the image).
+2. `kind create cluster` (Kubernetes-in-Docker -- free, no cloud account,
+   runs entirely on top of the Docker daemon already needed to build the
+   image) + `kind load docker-image` to get the image onto the cluster
+   without a registry.
+3. `kubectl create secret generic demoblaze-test-credentials --from-env-file=config/env/prod.env`
+   -- provisioned imperatively, never as a committed manifest (see
+   `k8s/base/secret.yaml.example`, which is a template only).
+4. `kubectl apply -k k8s/overlays/testing`, then
+   `kubectl create job --from=cronjob/demoblaze-tests <name>` to trigger an
+   immediate run without waiting for the schedule.
+5. **Caught and fixed a real bug this way, not just a happy-path run**: the
+   first attempt OOM-killed the pod. `playwright.config.ts` only caps
+   `workers` at 2 when `CI` is set (matching GitHub Actions); without it,
+   Playwright sized workers off the pod's visible CPU count and launched
+   far more browser processes than the memory limit could hold. Fixed by
+   setting `CI: 'true'` in `k8s/base/configmap.yaml` -- the pod now runs
+   under the same bound GitHub Actions CI already runs under, not a new,
+   separately-tuned number.
+6. The job completed: **15 passed, 1 flaky** (a cart-related retry-then-pass
+   -- the same shared-backend flakiness documented under "Known site
+   quirks" below, observed live here too, not something specific to k8s).
+7. Cluster torn down afterward (`kind delete cluster`) -- this was a
+   verification run, not infrastructure left running.
+
+**Not verified, and not claimed**: an actual always-on cluster (`kind` is
+local-only and disappears when torn down). For that, the honest free
+options are a self-hosted single-node cluster (e.g. k3s on a VM under a
+provider's free tier, such as Oracle Cloud's Always Free compute) or a
+managed cluster's trial credits -- neither is "free forever" in the way
+`kind` is for local verification, and none was provisioned here, so none is
+claimed as running.
+
+### Running it yourself
+
+```bash
+docker build -t demoblaze-automation:local .
+kind create cluster --name demoblaze-verify
+kind load docker-image demoblaze-automation:local --name demoblaze-verify
+
+kubectl apply -k k8s/overlays/testing
+kubectl create secret generic demoblaze-test-credentials \
+  --namespace demoblaze-testing \
+  --from-env-file=config/env/prod.env
+
+kubectl create job --from=cronjob/demoblaze-tests manual-run -n demoblaze-testing
+kubectl logs -f job/manual-run -n demoblaze-testing
+
+kind delete cluster --name demoblaze-verify   # tear down when done
+```
+
+Swap `testing` for `staging`/`production` to deploy a different run
+profile; each is a separate namespace so all three can coexist on the same
+cluster.
+
 ## Teardown
 
 Every test that mutates shared state cleans up after itself. This matters
