@@ -135,7 +135,7 @@ project instead: `npx playwright test --project=chromium --headed`.
 
 ## CI
 
-`.github/workflows/e2e.yml` has three jobs:
+`.github/workflows/e2e.yml` has four jobs:
 
 - **`lint`** -- `typecheck` + `lint` + `format:check` + `test:unit` (no
   browser, seconds not minutes). This is what makes `CODE_CONVENTIONS.md`
@@ -154,6 +154,14 @@ project instead: `npx playwright test --project=chromium --headed`.
   passes on a push to `main`. Not run on every PR -- too slow to gate on,
   and per "Known site quirks" below, the full matrix is also where
   shared-backend contention is most likely to surface as flakiness.
+- **`publish-image`** -- builds `Dockerfile` and pushes it to **GitHub
+  Container Registry** (`ghcr.io/<owner>/demoblaze-automation`, tagged
+  `latest` and by commit SHA) after `smoke` passes on a push to `main` --
+  same trigger scope as `full-suite`. Uses `GITHUB_TOKEN` (no separate
+  registry account needed), `packages: write` scoped to just this job. A
+  freshly-pushed GHCR package defaults to **private**; making it public is
+  a one-time manual step (repo -> Packages -> package settings -> Change
+  visibility) not automated here.
 
 **`lint` and `smoke` are required status checks** on `main` -- a PR can't be
 merged until both pass. This is a GitHub branch protection setting, applied
@@ -257,6 +265,12 @@ provider's free tier, such as Oracle Cloud's Always Free compute) or a
 managed cluster's trial credits -- neither is "free forever" in the way
 `kind` is for local verification, and none was provisioned here, so none is
 claimed as running.
+
+The manifests below reference `demoblaze-automation:local` (built locally,
+what the `kind` verification above used). CI now also builds and pushes
+this same image to `ghcr.io/<owner>/demoblaze-automation:latest` on every
+push to `main` (see "CI" below) -- a real, always-on cluster would set
+`image:` in `k8s/base/cronjob.yaml` to that instead of building locally.
 
 ### Running it yourself
 
