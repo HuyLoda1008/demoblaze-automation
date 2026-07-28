@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: demoblaze-test-config
+data:
+  # DemoBlaze has exactly one real environment -- see config/environments.ts.
+  # The testing/staging/production split below is about run cadence and tag
+  # selection (how often, which subset), not separate DemoBlaze targets.
+  TEST_ENV: demoblaze_prod
+  BASE_URL: https://www.demoblaze.com
+  API_BASE_URL: https://api.demoblaze.com
+  # playwright.config.ts caps workers at 2 only when CI is set -- without
+  # it, Playwright sizes workers off detected CPU count, which spawned far
+  # more browser processes than the pod's memory limit could hold
+  # (verified live: OOM-killed at 2Gi before this was set). Matches the
+  # same bound GitHub Actions CI already runs under.
+  CI: 'true'
