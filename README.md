@@ -4,6 +4,10 @@ E2E automation framework (Playwright + TypeScript) covering the **Login** and
 **Cart** features of [demoblaze.com](https://www.demoblaze.com/), built as a
 QA Automation take-home submission.
 
+**Demo video**: [`demo/login-cart-checkout-demo.webm`](demo/login-cart-checkout-demo.webm)
+-- login -> add to cart -> place order, recorded with `npm run demo` (click
+through to GitHub's file view to play it inline).
+
 Contributing? See [`CODE_CONVENTIONS.md`](CODE_CONVENTIONS.md) for naming,
 locator, assertion, and teardown conventions before adding a page object or
 spec, and the [PR template](.github/PULL_REQUEST_TEMPLATE.md) for what a PR
@@ -34,7 +38,15 @@ npm run gen:testcases    # regenerate test-cases/test-cases.xlsx
 npm run typecheck        # tsc --noEmit
 npm run lint             # eslint . --max-warnings 0
 npm run format:check     # prettier --check .
+npm run demo             # record a video of the login -> add-to-cart -> place-order flow
 ```
+
+`npm run demo` (`demo/record-demo.ts`) isn't a test -- no assertions, no CI job. It reuses the
+same page objects the suite uses (`HomePage`, `ProductDetailPage`, `CartPage`) to drive a
+single headed, paced-out run of the brief's "Automation Implementation Demo" flow and records
+it to `demo/login-cart-checkout-demo.webm` via Playwright's built-in video recording -- no
+external screen-recording tool needed. That file is committed (~2.7MB, well under GitHub's
+limits) and linked at the top of this README; re-running `npm run demo` overwrites it in place.
 
 Tag-based selection also works directly: `npx playwright test --grep @auth`.
 

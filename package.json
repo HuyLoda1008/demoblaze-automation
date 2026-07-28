@@ -14,7 +14,8 @@
     "gen:testcases": "tsx test-cases/generate-xlsx.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings 0",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "demo": "tsx demo/record-demo.ts"
   },
   "keywords": [
     "playwright",
