@@ -1,4 +1,3 @@
-
 # DemoBlaze Automation
 
 [![E2E Tests](https://github.com/HuyLoda1008/demoblaze-automation/actions/workflows/e2e.yml/badge.svg)](https://github.com/HuyLoda1008/demoblaze-automation/actions/workflows/e2e.yml)
@@ -7,11 +6,20 @@ E2E automation framework (Playwright + TypeScript) covering the **Login** and
 **Cart** features of [demoblaze.com](https://www.demoblaze.com/), built as a
 QA Automation take-home submission.
 
-**Demo video**: [login-cart-checkout-demo.webm](https://github.com/user-attachments/assets/95a80e60-1560-490f-a715-1f93b70f4568)
--- login -> add to cart -> place order, recorded with `npm run demo` (click
-through to GitHub's file view to play it inline).
+**Demo video** -- login -> add to cart -> place order, recorded with
+`npm run demo`:
 
+https://github.com/user-attachments/assets/95a80e60-1560-490f-a715-1f93b70f4568
 
+(An earlier version of this linked the file committed in `demo/` instead --
+verified live that GitHub's blob viewer refuses to preview files of this
+size ("can't show files that are this big right now"), so it never actually
+played. This asset, uploaded through GitHub's own editor instead of
+committed via git, is what renders an inline player -- but only as a bare
+URL on its own line; wrapped in `[text](...)` markdown link syntax, GitHub
+renders it as a plain hyperlink instead of embedding the player, which live
+verification confirmed was the actual cause of the first attempt not
+rendering.)
 
 Contributing? See [`CODE_CONVENTIONS.md`](CODE_CONVENTIONS.md) for naming,
 locator, assertion, and teardown conventions before adding a page object or
@@ -51,7 +59,10 @@ same page objects the suite uses (`HomePage`, `ProductDetailPage`, `CartPage`) t
 single headed, paced-out run of the brief's "Automation Implementation Demo" flow and records
 it to `demo/login-cart-checkout-demo.webm` via Playwright's built-in video recording -- no
 external screen-recording tool needed. That file is committed (~2.7MB, well under GitHub's
-limits) and linked at the top of this README; re-running `npm run demo` overwrites it in place.
+push limits) as an artifact/backup, but the link at the top of this README points to a copy
+uploaded through GitHub's editor instead (see the note there for why). Re-running `npm run
+demo` overwrites the committed copy in place; re-uploading the new version through the editor
+is a separate manual step.
 
 Tag-based selection also works directly: `npx playwright test --grep @auth`.
 
