@@ -1,4 +1,4 @@
-import { Locator, Page } from '@playwright/test';
+import { Locator, Page, expect } from '@playwright/test';
 import { BasePage } from '../base.page';
 
 export interface OrderFormData {
@@ -44,13 +44,34 @@ export class OrderModalPage extends BasePage {
     this.confirmation = page.locator('.sweet-alert');
   }
 
+  async isLoaded(timeoutMs = 10_000): Promise<boolean> {
+    try {
+      await this.modal.waitFor({ state: 'visible', timeout: timeoutMs });
+      await this.nameInput.waitFor({ state: 'visible', timeout: timeoutMs });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /** Verifies each field's value after filling it (same pattern as
+   * LoginModalPage.fillCredentials) rather than only trusting fill()'s own
+   * await -- a form this size makes "which field didn't actually take the
+   * value" a real debugging cost if the failure only surfaces later as a
+   * wrong purchase confirmation or an unexplained silent no-op. */
   async fillOrderForm(data: OrderFormData): Promise<void> {
     await this.nameInput.fill(data.name);
+    await expect(this.nameInput).toHaveValue(data.name);
     await this.countryInput.fill(data.country);
+    await expect(this.countryInput).toHaveValue(data.country);
     await this.cityInput.fill(data.city);
+    await expect(this.cityInput).toHaveValue(data.city);
     await this.cardInput.fill(data.card);
+    await expect(this.cardInput).toHaveValue(data.card);
     await this.monthInput.fill(data.month);
+    await expect(this.monthInput).toHaveValue(data.month);
     await this.yearInput.fill(data.year);
+    await expect(this.yearInput).toHaveValue(data.year);
   }
 
   /**

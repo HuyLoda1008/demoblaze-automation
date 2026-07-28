@@ -3,7 +3,10 @@ import { test, expect } from '../../../src/fixtures/test-options';
 test.describe('Login', () => {
   test('valid credentials log the user in', { tag: ['@smoke', '@auth'] }, async ({ homePage, env }) => {
     await homePage.open();
+    expect(await homePage.isLoaded()).toBe(true);
+
     await homePage.openLoginModal();
+    expect(await homePage.loginModal.isLoaded()).toBe(true);
 
     await homePage.loginModal.loginExpectingSuccess(env.testUser.username, env.testUser.password);
 
@@ -23,7 +26,10 @@ test.describe('Login', () => {
     { tag: ['@regression', '@auth'] },
     async ({ homePage, env }) => {
       await homePage.open();
+      expect(await homePage.isLoaded()).toBe(true);
+
       await homePage.openLoginModal();
+      expect(await homePage.loginModal.isLoaded()).toBe(true);
 
       const message = await homePage.loginModal.loginExpectingDialog(
         env.testUser.username,
@@ -40,7 +46,10 @@ test.describe('Login', () => {
     { tag: ['@regression', '@auth'] },
     async ({ homePage }) => {
       await homePage.open();
+      expect(await homePage.isLoaded()).toBe(true);
+
       await homePage.openLoginModal();
+      expect(await homePage.loginModal.isLoaded()).toBe(true);
 
       const message = await homePage.loginModal.loginExpectingDialog(
         'nonexistent_user_zzz_999',
@@ -56,7 +65,10 @@ test.describe('Login', () => {
     { tag: ['@regression', '@auth'] },
     async ({ homePage }) => {
       await homePage.open();
+      expect(await homePage.isLoaded()).toBe(true);
+
       await homePage.openLoginModal();
+      expect(await homePage.loginModal.isLoaded()).toBe(true);
 
       const message = await homePage.loginModal.loginExpectingDialog('', '');
 
