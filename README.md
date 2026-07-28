@@ -137,7 +137,7 @@ project instead: `npx playwright test --project=chromium --headed`.
 
 ## CI
 
-`.github/workflows/e2e.yml` has five jobs:
+`.github/workflows/e2e.yml` has six jobs:
 
 - **`lint`** -- `typecheck` + `lint` + `format:check` + `test:unit` (no
   browser, seconds not minutes). This is what makes `CODE_CONVENTIONS.md`
@@ -168,6 +168,14 @@ project instead: `npx playwright test --project=chromium --headed`.
   `--config=playwright.config.ts` and no `--reporter` flag, so
   `merge-reports` picks up the full `list`/`html`/`json`/`junit` reporter
   array (output paths included) from the config itself.
+- **`publish-report`** -- deploys `merge-reports`'s HTML report (trace
+  viewer, screenshots, per-test timing) to **GitHub Pages** at
+  <https://huyloda1008.github.io/demoblaze-automation/> -- only after a push
+  to `main`, never on a PR, and via `if: always()` so a failing run still
+  publishes its report rather than leaving the live page on a stale passing
+  one. Needs `pages: write` / `id-token: write`, scoped to just this job
+  (not the whole workflow) via GitHub Actions' official
+  `actions/deploy-pages`.
 - **`publish-image`** -- builds `Dockerfile` and pushes it to **GitHub
   Container Registry** (`ghcr.io/<owner>/demoblaze-automation`, tagged
   `latest` and by commit SHA) after `smoke` passes on a push to `main` --

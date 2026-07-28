@@ -157,6 +157,43 @@ jobs:
           path: reports/
           retention-days: 14
 
+  # Publishes the full-suite HTML report to GitHub Pages so a reviewer can
+  # click into pass/fail detail (trace viewer, screenshots) without
+  # downloading a zip -- only for pushes to main (never on a PR, and
+  # `if: always()` so a failing run still publishes its report instead of
+  # leaving the live page on a stale passing one). Depends on
+  # merge-reports, not full-suite directly -- full-suite is now sharded
+  # and only produces per-shard blob-report-N artifacts; merge-reports is
+  # what actually produces the playwright-report-full artifact this job
+  # downloads (caught this before it shipped broken, reconciling this PR
+  # with the sharding PR that merged in the meantime).
+  publish-report:
+    name: publish-report
+    if: ${{ always() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    needs: merge-reports
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: playwright-report-full
+          path: reports-full
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: reports-full/html
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
   # Builds and pushes the test-runner image (Dockerfile) to GitHub
   # Container Registry -- ghcr.io, tied to this repo via GITHUB_TOKEN, no
   # separate registry account needed. Gated on smoke passing first (only
