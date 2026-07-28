@@ -133,7 +133,7 @@ project instead: `npx playwright test --project=chromium --headed`.
 
 ## CI
 
-`.github/workflows/e2e.yml` has three jobs:
+`.github/workflows/e2e.yml` has four jobs:
 
 - **`lint`** -- `typecheck` + `lint` + `format:check` (no browser, seconds
   not minutes). This is what makes `CODE_CONVENTIONS.md` an enforced gate
@@ -149,6 +149,14 @@ project instead: `npx playwright test --project=chromium --headed`.
   passes on a push to `main`. Not run on every PR -- too slow to gate on,
   and per "Known site quirks" below, the full matrix is also where
   shared-backend contention is most likely to surface as flakiness.
+- **`publish-report`** -- deploys `full-suite`'s HTML report (trace viewer,
+  screenshots, per-test timing) to **GitHub Pages** at
+  <https://huyloda1008.github.io/demoblaze-automation/> -- only after a push
+  to `main`, never on a PR, and via `if: always()` so a failing run still
+  publishes its report rather than leaving the live page on a stale passing
+  one. Needs `pages: write` / `id-token: write`, scoped to just this job
+  (not the whole workflow) via GitHub Actions' official
+  `actions/deploy-pages`.
 
 **`lint` and `smoke` are required status checks** on `main` -- a PR can't be
 merged until both pass. This is a GitHub branch protection setting, applied
