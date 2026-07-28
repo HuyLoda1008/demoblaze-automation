@@ -133,7 +133,7 @@ project instead: `npx playwright test --project=chromium --headed`.
 
 ## CI
 
-`.github/workflows/e2e.yml` has three jobs:
+`.github/workflows/e2e.yml` has four jobs:
 
 - **`lint`** -- `typecheck` + `lint` + `format:check` (no browser, seconds
   not minutes). This is what makes `CODE_CONVENTIONS.md` an enforced gate
@@ -148,7 +148,19 @@ project instead: `npx playwright test --project=chromium --headed`.
   matrix. Runs on manual `workflow_dispatch`, or automatically after `smoke`
   passes on a push to `main`. Not run on every PR -- too slow to gate on,
   and per "Known site quirks" below, the full matrix is also where
-  shared-backend contention is most likely to surface as flakiness.
+  shared-backend contention is most likely to surface as flakiness. Sharded
+  3-way (`--shard=N/3`) so the matrix runs in parallel instead of one long
+  serial job; each shard uploads a Playwright `blob` report (an
+  intermediate format, not html/json/junit directly).
+- **`merge-reports`** -- combines the 3 shards' blob reports back into a
+  single `html`/`json`/`junit` report via `npx playwright merge-reports`.
+  Worth a callout: `--reporter=html` on that command overrides the config's
+  entire reporter list, including the html reporter's `outputFolder`
+  option -- verified live that it silently writes to the default
+  `playwright-report/` instead of `reports/html`. The fix is to pass only
+  `--config=playwright.config.ts` and no `--reporter` flag, so
+  `merge-reports` picks up the full `list`/`html`/`json`/`junit` reporter
+  array (output paths included) from the config itself.
 
 **`lint` and `smoke` are required status checks** on `main` -- a PR can't be
 merged until both pass. This is a GitHub branch protection setting, applied
