@@ -44,6 +44,7 @@ npm test                 # full suite, all browsers (chromium/firefox/webkit/Mob
 npm run test:smoke       # fast subset, tagged @smoke
 npm run test:regression  # broader negative/edge coverage, tagged @regression
 npm run test:api         # API-only specs (no browser, sub-second each)
+npm run test:unit        # pure-logic unit tests (Zod schemas, env config), no browser
 npm run test:perf        # navigation-timing smoke checks
 npm run test:headed      # any of the above with --headed for local debugging
 npm run report           # open the last HTML report
@@ -87,6 +88,7 @@ tests/
   regression/cart-and-checkout.regression.spec.ts
   api/demoblaze-api.spec.ts       (Playwright's `request` fixture, no browser)
   performance/page-load.perf.spec.ts
+  unit/api-client-schemas.spec.ts, environments.spec.ts   (pure logic, no browser/network)
 test-cases/
   generate-xlsx.ts       # typed source of truth -> test-cases.xlsx (deliverable #1)
 eslint.config.js         # lint rules, incl. the Page Object Model boundary check (see CI below)
@@ -133,15 +135,18 @@ project instead: `npx playwright test --project=chromium --headed`.
 
 ## CI
 
-`.github/workflows/e2e.yml` has four jobs:
+`.github/workflows/e2e.yml` has five jobs:
 
-- **`lint`** -- `typecheck` + `lint` + `format:check` (no browser, seconds
-  not minutes). This is what makes `CODE_CONVENTIONS.md` an enforced gate
-  rather than a checklist a reviewer has to manually verify -- see
-  `eslint.config.js`, which includes a repo-specific
+- **`lint`** -- `typecheck` + `lint` + `format:check` + `test:unit` (no
+  browser, seconds not minutes). This is what makes `CODE_CONVENTIONS.md`
+  an enforced gate rather than a checklist a reviewer has to manually
+  verify -- see `eslint.config.js`, which includes a repo-specific
   `no-restricted-syntax` rule blocking `page.click/fill/...` calls inside
   `tests/**/*.spec.ts` (the Page Object Model boundary), not just generic
-  style rules.
+  style rules. `tests/unit/` covers pure logic (the Zod schemas in
+  `api-client.ts`, `getEnvConfig()`'s branching) that needs neither a
+  browser nor a network call, so it runs here instead of waiting on the
+  `smoke` job's browser install.
 - **`smoke`** -- runs on every `push`/`pull_request`, `--grep @smoke` only
   (~40s).
 - **`full-suite`** -- the entire cross-browser + regression + api + perf
@@ -161,6 +166,14 @@ project instead: `npx playwright test --project=chromium --headed`.
   `--config=playwright.config.ts` and no `--reporter` flag, so
   `merge-reports` picks up the full `list`/`html`/`json`/`junit` reporter
   array (output paths included) from the config itself.
+- **`publish-image`** -- builds `Dockerfile` and pushes it to **GitHub
+  Container Registry** (`ghcr.io/<owner>/demoblaze-automation`, tagged
+  `latest` and by commit SHA) after `smoke` passes on a push to `main` --
+  same trigger scope as `full-suite`. Uses `GITHUB_TOKEN` (no separate
+  registry account needed), `packages: write` scoped to just this job. A
+  freshly-pushed GHCR package defaults to **private**; making it public is
+  a one-time manual step (repo -> Packages -> package settings -> Change
+  visibility) not automated here.
 
 **`lint` and `smoke` are required status checks** on `main` -- a PR can't be
 merged until both pass. This is a GitHub branch protection setting, applied
@@ -264,6 +277,12 @@ provider's free tier, such as Oracle Cloud's Always Free compute) or a
 managed cluster's trial credits -- neither is "free forever" in the way
 `kind` is for local verification, and none was provisioned here, so none is
 claimed as running.
+
+The manifests below reference `demoblaze-automation:local` (built locally,
+what the `kind` verification above used). CI now also builds and pushes
+this same image to `ghcr.io/<owner>/demoblaze-automation:latest` on every
+push to `main` (see "CI" below) -- a real, always-on cluster would set
+`image:` in `k8s/base/cronjob.yaml` to that instead of building locally.
 
 ### Running it yourself
 
