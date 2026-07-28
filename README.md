@@ -7,10 +7,10 @@ E2E automation framework (Playwright + TypeScript) covering the **Login** and
 **Cart** features of [demoblaze.com](https://www.demoblaze.com/), built as a
 QA Automation take-home submission.
 
-**Demo video**: [`demo/login-cart-checkout-demo.webm`](demo/login-cart-checkout-demo.webm)
+**Demo video**: [login-cart-checkout-demo.webm](https://github.com/user-attachments/assets/95a80e60-1560-490f-a715-1f93b70f4568)
 -- login -> add to cart -> place order, recorded with `npm run demo` (click
 through to GitHub's file view to play it inline).
-[login-cart-checkout-demo.webm](https://github.com/user-attachments/assets/95a80e60-1560-490f-a715-1f93b70f4568)
+
 
 
 Contributing? See [`CODE_CONVENTIONS.md`](CODE_CONVENTIONS.md) for naming,
