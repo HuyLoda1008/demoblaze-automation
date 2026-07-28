@@ -26,10 +26,27 @@ export class CartPage extends BasePage {
     this.orderModal = new OrderModalPage(page);
   }
 
+  /** `placeOrderButton` is part of the page's static layout, not the
+   * dynamically-rendered row list -- confirmed live it's present and
+   * visible even when the cart has zero rows, so it's a reliable "the cart
+   * page itself finished loading" marker regardless of cart content. */
   async open(): Promise<void> {
     await this.goto('/cart.html');
-    // DemoBlaze populates the cart table asynchronously after page load.
+    await expect(this.placeOrderButton).toBeVisible();
+    // DemoBlaze populates the cart *rows* asynchronously after that, on a
+    // separate timer from the rest of the page -- give it a moment before
+    // any caller starts reading row state, on top of the load assertion
+    // above.
     await this.page.waitForTimeout(500);
+  }
+
+  async isLoaded(timeoutMs = 10_000): Promise<boolean> {
+    try {
+      await this.placeOrderButton.waitFor({ state: 'visible', timeout: timeoutMs });
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async getRowCount(): Promise<number> {
@@ -146,6 +163,7 @@ export class CartPage extends BasePage {
 
   async clickPlaceOrder(): Promise<void> {
     await this.placeOrderButton.click();
-    await this.orderModal.modal.waitFor({ state: 'visible' });
+    await expect(this.orderModal.modal).toBeVisible();
+    await expect(this.orderModal.nameInput).toBeVisible();
   }
 }

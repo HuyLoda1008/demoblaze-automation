@@ -11,15 +11,18 @@ test.describe('Add to cart', () => {
   test(
     'adding a product increases the cart by one and shows its name',
     { tag: ['@smoke', '@cart'] },
-    async ({ page, productDetailPage, cartPage, cartCleanup }) => {
+    async ({ productDetailPage, cartPage, cartCleanup }) => {
       await cartPage.open();
+      expect(await cartPage.isLoaded()).toBe(true);
       const idsBefore = await cartPage.getRowIdsByName('Samsung galaxy s6');
 
-      await page.goto(`/prod.html?idp_=${SAMSUNG_S6_ID}`);
+      await productDetailPage.open(SAMSUNG_S6_ID);
+      expect(await productDetailPage.isLoaded()).toBe(true);
       const dialogMessage = await productDetailPage.addToCart();
       expect(dialogMessage).toBe('Product added');
 
       await cartPage.open();
+      expect(await cartPage.isLoaded()).toBe(true);
       const [newId] = await cartPage.waitForNewIds('Samsung galaxy s6', idsBefore);
       cartCleanup.track(newId); // no purchase happens in this test -- teardown must delete it explicitly
     }
@@ -28,16 +31,21 @@ test.describe('Add to cart', () => {
   test(
     'adding the same product twice appends two separate rows, not a quantity increment',
     { tag: ['@regression', '@cart'] },
-    async ({ page, productDetailPage, cartPage, cartCleanup }) => {
+    async ({ productDetailPage, cartPage, cartCleanup }) => {
       await cartPage.open();
+      expect(await cartPage.isLoaded()).toBe(true);
       const idsBefore = await cartPage.getRowIdsByName('Samsung galaxy s6');
 
-      await page.goto(`/prod.html?idp_=${SAMSUNG_S6_ID}`);
+      await productDetailPage.open(SAMSUNG_S6_ID);
+      expect(await productDetailPage.isLoaded()).toBe(true);
       await productDetailPage.addToCart();
-      await page.goto(`/prod.html?idp_=${SAMSUNG_S6_ID}`);
+
+      await productDetailPage.open(SAMSUNG_S6_ID);
+      expect(await productDetailPage.isLoaded()).toBe(true);
       await productDetailPage.addToCart();
 
       await cartPage.open();
+      expect(await cartPage.isLoaded()).toBe(true);
       // DemoBlaze's cart is shared across concurrent real-world visitors AND
       // eventually-consistent (verified live) -- diffing against idsBefore
       // (rather than an absolute/delta count) is what makes this reliable.

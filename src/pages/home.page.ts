@@ -1,4 +1,4 @@
-import { Locator, Page } from '@playwright/test';
+import { Locator, Page, expect } from '@playwright/test';
 import { BasePage } from './base.page';
 import { LoginModalPage } from './auth/login-modal.page';
 import { SignupModalPage } from './auth/signup-modal.page';
@@ -27,18 +27,34 @@ export class HomePage extends BasePage {
     this.signupModal = new SignupModalPage(page);
   }
 
+  /** Verifies the product grid actually rendered before returning -- a slow
+   * or broken page load would otherwise surface as a confusing failure
+   * several steps later (e.g. openLoginModal() clicking a nav link that
+   * technically exists but the page around it never finished loading). */
   async open(): Promise<void> {
     await this.goto('/');
+    await expect(this.productCards.first()).toBeVisible();
+  }
+
+  async isLoaded(timeoutMs = 10_000): Promise<boolean> {
+    try {
+      await this.productCards.first().waitFor({ state: 'visible', timeout: timeoutMs });
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async openLoginModal(): Promise<void> {
     await this.loginNavLink.click();
-    await this.loginModal.modal.waitFor({ state: 'visible' });
+    await expect(this.loginModal.modal).toBeVisible();
+    await expect(this.loginModal.usernameInput).toBeVisible();
   }
 
   async openSignupModal(): Promise<void> {
     await this.signupNavLink.click();
-    await this.signupModal.modal.waitFor({ state: 'visible' });
+    await expect(this.signupModal.modal).toBeVisible();
+    await expect(this.signupModal.usernameInput).toBeVisible();
   }
 
   async isLoggedIn(): Promise<boolean> {
@@ -58,9 +74,5 @@ export class HomePage extends BasePage {
 
   async getProductNames(): Promise<string[]> {
     return this.page.locator('.card-title a.hrefch').allInnerTexts();
-  }
-
-  async openProductByName(name: string): Promise<void> {
-    await this.page.locator('.card-title a.hrefch', { hasText: name }).click();
   }
 }

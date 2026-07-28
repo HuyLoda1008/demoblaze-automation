@@ -57,6 +57,16 @@ export class LoginModalPage extends BasePage {
     await expect(this.passwordInput).toHaveValue(password);
   }
 
+  async isLoaded(timeoutMs = 10_000): Promise<boolean> {
+    try {
+      await this.modal.waitFor({ state: 'visible', timeout: timeoutMs });
+      await this.submitButton.waitFor({ state: 'visible', timeout: timeoutMs });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   async close(): Promise<void> {
     await this.modal.locator('.close').click();
   }
