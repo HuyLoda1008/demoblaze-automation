@@ -71,6 +71,11 @@ export const AuthTokenSchema = z.string().regex(/^Auth_token: /);
 
 export interface LoginResult {
   status: number;
+  /** True only when the response contained a valid auth token --
+   * business-logic success, NOT merely that the HTTP status was 2xx.
+   * DemoBlaze returns 200 for failed logins too (wrong password,
+   * nonexistent user), so a naive `res.ok()` would be `true` in both the
+   * success and failure branches and assert nothing meaningful. */
   ok: boolean;
   /** The JSON-string token body on success (e.g. "Auth_token: <base64>"); null on failure. */
   authToken: string | null;
@@ -133,20 +138,22 @@ export class DemoblazeApiClient {
     };
   }
 
-  /** Returns just the HTTP status -- exists to exercise the documented
-   * "GET is rejected" negative case, not to fetch data. */
-  async getProductViaGetStatus(id: number | string): Promise<number> {
+  /** Exists to exercise the documented "GET is rejected" negative case, not
+   * to fetch data. Returns the body too (Werkzeug's default HTML error
+   * page) so callers can assert the message matches the status, not just
+   * the status alone. */
+  async getProductViaGet(id: number | string): Promise<{ status: number; body: string }> {
     const res = await this.request.get(`${this.baseUrl}/view?id=${id}`);
-    return res.status();
+    return { status: res.status(), body: await res.text() };
   }
 
-  /** Generic status-only check for paths that aren't a real DemoBlaze API
+  /** Generic status+body check for paths that aren't a real DemoBlaze API
    * operation (e.g. confirming an unknown route 404s) -- kept on the client
    * rather than a raw `request.get()` in the test, per CODE_CONVENTIONS'
    * "every api.demoblaze.com call goes through DemoblazeApiClient". */
-  async getStatus(path: string): Promise<number> {
+  async getRaw(path: string): Promise<{ status: number; body: string }> {
     const res = await this.request.get(`${this.baseUrl}${path}`);
-    return res.status();
+    return { status: res.status(), body: await res.text() };
   }
 
   async login(username: string, password: string): Promise<LoginResult> {
@@ -160,12 +167,12 @@ export class DemoblazeApiClient {
 
     const tokenParsed = AuthTokenSchema.safeParse(body);
     if (tokenParsed.success) {
-      return { status, ok: res.ok(), authToken: tokenParsed.data, errorMessage: null };
+      return { status, ok: true, authToken: tokenParsed.data, errorMessage: null };
     }
     const errorParsed = ApiErrorSchema.safeParse(body);
     return {
       status,
-      ok: res.ok(),
+      ok: false,
       authToken: null,
       errorMessage: errorParsed.success ? errorParsed.data.errorMessage : null,
     };
