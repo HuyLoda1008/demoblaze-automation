@@ -75,4 +75,45 @@ test.describe('Login', () => {
       expect(message).toBe('Please fill out Username and Password.');
     }
   );
+
+  test(
+    'a username padded with whitespace is treated as a different, nonexistent username',
+    { tag: ['@regression', '@auth'] },
+    async ({ homePage, env }) => {
+      await homePage.open();
+      expect(await homePage.isLoaded()).toBe(true);
+
+      await homePage.openLoginModal();
+      expect(await homePage.loginModal.isLoaded()).toBe(true);
+
+      // Verified live: DemoBlaze does not trim the username server-side, so
+      // padding a real, registered username with spaces makes it fail the
+      // same way an unregistered one would.
+      const message = await homePage.loginModal.loginExpectingDialog(
+        `  ${env.testUser.username}  `,
+        env.testUser.password
+      );
+
+      expect(message).toBe('User does not exist.');
+    }
+  );
+
+  test(
+    'log out returns the nav bar to the logged-out state',
+    { tag: ['@regression', '@auth'] },
+    async ({ homePage, env }) => {
+      await homePage.open();
+      expect(await homePage.isLoaded()).toBe(true);
+
+      await homePage.openLoginModal();
+      expect(await homePage.loginModal.isLoaded()).toBe(true);
+      await homePage.loginModal.loginExpectingSuccess(env.testUser.username, env.testUser.password);
+      await expect(homePage.welcomeLabel).toHaveText(`Welcome ${env.testUser.username}`, { timeout: 15_000 });
+
+      await homePage.logout();
+
+      await expect(homePage.logoutNavLink).not.toBeVisible();
+      await expect(homePage.loginNavLink).toBeVisible();
+    }
+  );
 });
