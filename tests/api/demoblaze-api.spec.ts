@@ -99,9 +99,12 @@ test.describe('DemoBlaze API', () => {
     'GET /view is rejected -- the endpoint requires POST',
     { tag: ['@api', '@regression'] },
     async ({ apiClient }) => {
-      const status = await apiClient.getProductViaGetStatus(1);
+      const result = await apiClient.getProductViaGet(1);
 
-      expect(status).toBe(405);
+      expect(result.status).toBe(405);
+      // Werkzeug's default 405 page, confirmed live -- asserting the
+      // message matches the status, not just the status alone.
+      expect(result.body).toContain('Method Not Allowed');
     }
   );
 
@@ -109,9 +112,12 @@ test.describe('DemoBlaze API', () => {
     'an unknown route returns a conventional 404 (unlike the /view business-logic errors above)',
     { tag: ['@api', '@regression'] },
     async ({ apiClient }) => {
-      const status = await apiClient.getStatus('/this-route-does-not-exist');
+      const result = await apiClient.getRaw('/this-route-does-not-exist');
 
-      expect(status).toBe(404);
+      expect(result.status).toBe(404);
+      // Werkzeug's default 404 page, confirmed live -- same reasoning as
+      // the 405 case above.
+      expect(result.body).toContain('Not Found');
     }
   );
 
@@ -119,7 +125,12 @@ test.describe('DemoBlaze API', () => {
     test('valid credentials succeed', { tag: ['@api', '@auth'] }, async ({ apiClient, env }) => {
       const result = await apiClient.login(env.testUser.username, env.testUser.password);
 
-      expect(result.ok).toBeTruthy();
+      // status alone can't distinguish success from failure here (both
+      // return 200 -- see the wrong-password/nonexistent-username cases
+      // below), so `ok` (business-logic, derived from the token shape, not
+      // res.ok()) is what actually carries the pass/fail signal.
+      expect(result.status).toBe(200);
+      expect(result.ok).toBe(true);
       expect(result.authToken).toContain('Auth_token');
       expect(result.errorMessage).toBeNull();
     });
@@ -127,7 +138,10 @@ test.describe('DemoBlaze API', () => {
     test('wrong password returns an errorMessage', { tag: ['@api', '@auth'] }, async ({ apiClient, env }) => {
       const result = await apiClient.login(env.testUser.username, 'definitely-wrong-password');
 
-      expect(result.ok).toBeTruthy();
+      // Same HTTP status (200) as the success case above -- errorMessage
+      // and `ok: false` are the only signals that this login failed.
+      expect(result.status).toBe(200);
+      expect(result.ok).toBe(false);
       expect(result.errorMessage).toBe('Wrong password.');
       expect(result.authToken).toBeNull();
     });
@@ -138,6 +152,8 @@ test.describe('DemoBlaze API', () => {
       async ({ apiClient }) => {
         const result = await apiClient.login('nonexistent_user_zzz_999', 'whatever123');
 
+        expect(result.status).toBe(200);
+        expect(result.ok).toBe(false);
         expect(result.errorMessage).toBe('User does not exist.');
       }
     );

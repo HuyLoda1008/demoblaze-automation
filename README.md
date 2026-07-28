@@ -307,6 +307,14 @@ framework -- not guessed from documentation.
   error message ("Product not found.") than an unrecognized id ("Not
   found."), and a missing login `password` reports "Bad parameter, missing
   username" -- a real message-labeling bug, not a typo in this suite.
+  Because `/login` returns `200` on both success and failure, the client's
+  login result derives its `ok` field from the token shape (business-logic
+  success), not `res.ok()` -- an earlier version used `res.ok()`, which
+  would have been `true` for a wrong password too and made the
+  "wrong password" test assert a tautology instead of anything meaningful.
+  The `405`/`404` tests also assert on the response body (Werkzeug's
+  default error page text), not just the status code, for the same reason:
+  a status-only assertion doesn't verify the message actually returned.
 - **Responses are validated against a runtime schema, not just spot-checked
   fields.** `src/utils/api-client.ts` defines Zod schemas (`ProductSchema`,
   `ProductCatalogSchema`, `ApiErrorSchema`, `AuthTokenSchema`) and calls
