@@ -46,6 +46,7 @@ npm run test:regression  # broader negative/edge coverage, tagged @regression
 npm run test:api         # API-only specs (no browser, sub-second each)
 npm run test:unit        # pure-logic unit tests (Zod schemas, env config), no browser
 npm run test:perf        # navigation-timing smoke checks
+npm run test:a11y        # axe-core accessibility checks (Home/Product/Cart)
 npm run test:headed      # any of the above with --headed for local debugging
 npm run report           # open the last HTML report
 npm run gen:testcases    # regenerate test-cases/test-cases.xlsx
@@ -88,6 +89,7 @@ tests/
   regression/cart-and-checkout.regression.spec.ts
   api/demoblaze-api.spec.ts       (Playwright's `request` fixture, no browser)
   performance/page-load.perf.spec.ts
+  accessibility/a11y.spec.ts      (axe-core, allowlist-based -- see "Known site quirks")
   unit/api-client-schemas.spec.ts, environments.spec.ts   (pure logic, no browser/network)
 test-cases/
   generate-xlsx.ts       # typed source of truth -> test-cases.xlsx (deliverable #1)
@@ -410,6 +412,16 @@ framework -- not guessed from documentation.
   `text=Place Order` locator ambiguously substring-matches the order modal's
   own heading, "Place order" (case-insensitive), causing a strict-mode
   violation.
+- **The Home page's accessibility violation set isn't fully deterministic
+  run to run.** `tests/accessibility/a11y.spec.ts` originally asserted an
+  exact list of `axe-core` violation ids per page; re-running the Home page
+  check three times in a row (same browser, same machine) showed
+  `link-name` flipping in and out, consistent with dynamic content
+  (rotating catalog/ad elements) rather than test flakiness. Fixed by
+  asserting every violation found is a member of a known-issues allowlist
+  (still fails on a genuinely new violation TYPE) instead of an exact
+  match, plus a standing assertion that the one violation confirmed
+  present on every run (`image-alt`, critical) never silently disappears.
 
 ## What's intentionally scoped down
 
