@@ -61,7 +61,7 @@ jobs:
 
       - name: Upload smoke test report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report-smoke
           path: reports/
@@ -104,7 +104,7 @@ jobs:
 
       - name: Upload blob report (shard ${{ matrix.shard }})
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: blob-report-${{ matrix.shard }}
           path: blob-report/
@@ -151,7 +151,7 @@ jobs:
 
       - name: Upload full suite report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report-full
           path: reports/
