@@ -13,6 +13,14 @@ updates:
         patterns:
           - '@playwright/*'
           - 'playwright*'
+    ignore:
+      # typescript-eslint@8.65.0 requires typescript@>=4.8.4 <6.1.0 as a
+      # peer dependency -- confirmed live that a major bump (5.x -> 7.x)
+      # breaks `npm ci` outright. TypeScript is intentionally pinned to
+      # ~5.7.0 for this reason; only ignoring major bumps so patch/minor
+      # updates within the <6.1.0 ceiling still come through normally.
+      - dependency-name: 'typescript'
+        update-types: ['version-update:semver-major']
 
   # Keeps actions/checkout, actions/setup-node, etc. (see e2e.yml) pinned
   # versions from silently drifting out of date -- the same reasoning as
