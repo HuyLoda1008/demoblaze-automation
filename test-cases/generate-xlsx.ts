@@ -134,7 +134,7 @@ const cartCases: TestCase[] = [
     priority: 'Medium',
     preconditions: 'None',
     steps: '1. Add a product to the cart\n2. Navigate back to the same product\n3. Add it to the cart again',
-    testData: 'Same product added twice',
+    testData: '"Samsung galaxy s6", added twice',
     expectedResult: 'Two separate rows appear for the product -- NOT a single row with quantity = 2',
     notes:
       'Verified live via the /viewcart API response: two distinct cart-item ids with the same prod_id are created, confirming "add" always appends rather than merging/incrementing quantity.',
@@ -144,9 +144,10 @@ const cartCases: TestCase[] = [
     scenario: 'Delete an item from the cart',
     type: 'Functional',
     priority: 'Medium',
-    preconditions: 'At least one item is in the cart',
-    steps: '1. Open the Cart page\n2. Click "Delete" on a row',
-    testData: 'N/A',
+    preconditions: 'None (test adds the item itself, then deletes it)',
+    steps:
+      '1. Open a product detail page and add it to the cart\n2. Open the Cart page\n3. Click "Delete" on that row',
+    testData: '"Nexus 6"',
     expectedResult: 'The row is removed from the table without a page reload',
     notes: '',
   },
@@ -155,10 +156,11 @@ const cartCases: TestCase[] = [
     scenario: 'Place an order with all fields filled correctly',
     type: 'Functional',
     priority: 'High',
-    preconditions: 'The cart contains at least one item',
+    preconditions: 'None (test adds the item itself)',
     steps:
-      '1. Open the Cart page\n2. Click "Place Order"\n3. Fill Name, Country, City, Credit card, Month, Year\n4. Click "Purchase"',
-    testData: 'Name="QA Automation", Card="4111111111111111", Month="12", Year="2030"',
+      '1. Open a product detail page and add it to the cart\n2. Open the Cart page\n3. Click "Place Order"\n4. Fill Name, Country, City, Credit card, Month, Year\n5. Click "Purchase"',
+    testData:
+      'Product="Nokia lumia 1520"; Name="QA Automation", Country="Vietnam", City="Ho Chi Minh City", Card="4111111111111111", Month="12", Year="2030"',
     expectedResult:
       'A confirmation dialog reads "Thank you for your purchase!" and shows an Id, Amount, Card Number, Name and Date matching the input',
     notes:
@@ -169,9 +171,10 @@ const cartCases: TestCase[] = [
     scenario: 'Submit the order form with every field left empty',
     type: 'Negative',
     priority: 'High',
-    preconditions: 'The cart contains at least one item',
-    steps: '1. Open "Place Order"\n2. Leave every field empty\n3. Click "Purchase"',
-    testData: 'All fields = ""',
+    preconditions: 'None (test adds the item itself)',
+    steps:
+      '1. Open a product detail page and add it to the cart\n2. Open the Cart page and click "Place Order"\n3. Leave every field empty\n4. Click "Purchase"',
+    testData: 'Product="Nokia lumia 1520"; all order-form fields = ""',
     expectedResult: 'No confirmation dialog appears',
     notes:
       'Verified live: this is a SILENT no-op -- there is no visible validation error either (the #errors label never populates). Do not write an assertion expecting an error message; assert only that the confirmation never appears.',
@@ -181,9 +184,10 @@ const cartCases: TestCase[] = [
     scenario: 'Submit the order form with only the Name field filled',
     type: 'Negative',
     priority: 'Medium',
-    preconditions: 'The cart contains at least one item',
-    steps: '1. Open "Place Order"\n2. Fill only the Name field\n3. Click "Purchase"',
-    testData: 'Name="Only Name Filled"; all other fields empty',
+    preconditions: 'None (test adds the item itself)',
+    steps:
+      '1. Open a product detail page and add it to the cart\n2. Open the Cart page and click "Place Order"\n3. Fill only the Name field\n4. Click "Purchase"',
+    testData: 'Product="Nexus 6"; Name="Only Name Filled"; all other fields empty',
     expectedResult: 'No confirmation dialog appears (same silent no-op as CART-005)',
     notes: 'Verified live.',
   },
@@ -192,10 +196,11 @@ const cartCases: TestCase[] = [
     scenario: 'Submit the order form with only the Name field left empty',
     type: 'Negative',
     priority: 'Medium',
-    preconditions: 'The cart contains at least one item',
+    preconditions: 'None (test adds the item itself)',
     steps:
-      '1. Open "Place Order"\n2. Fill Country, City, Card, Month, Year but leave Name empty\n3. Click "Purchase"',
-    testData: 'Name=""; all other fields filled with valid values',
+      '1. Open a product detail page and add it to the cart\n2. Open the Cart page and click "Place Order"\n3. Fill Country, City, Card, Month, Year but leave Name empty\n4. Click "Purchase"',
+    testData:
+      'Product="Nexus 6"; Name=""; Country="Vietnam", City="Ho Chi Minh City", Card="4111111111111111", Month="12", Year="2030"',
     expectedResult: 'No confirmation dialog appears -- Name specifically is required',
     notes: 'Verified live: confirms Name is checked even when every other field is valid.',
   },
@@ -204,10 +209,11 @@ const cartCases: TestCase[] = [
     scenario: 'Attempt to place an order with a non-numeric credit card value',
     type: 'Negative',
     priority: 'Low',
-    preconditions: 'The cart contains at least one item; other fields filled',
+    preconditions: 'None (test adds the item itself)',
     steps:
-      '1. Open "Place Order"\n2. Fill Card with a non-numeric string (e.g. "abcd")\n3. Fill remaining fields\n4. Click "Purchase"',
-    testData: 'Card="abcd"',
+      '1. Open a product detail page and add it to the cart\n2. Open the Cart page and click "Place Order"\n3. Fill Card with a non-numeric string (e.g. "abcd")\n4. Fill remaining fields\n5. Click "Purchase"',
+    testData:
+      'Product="Nokia lumia 1520"; Name="QA Automation", Country="Vietnam", City="Ho Chi Minh City", Card="abcd", Month="12", Year="2030"',
     expectedResult:
       'Purchase SUCCEEDS regardless -- the confirmation dialog shows "Card Number: abcd" verbatim. There is no card-format validation at all.',
     notes:
