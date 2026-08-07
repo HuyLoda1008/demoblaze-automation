@@ -1,4 +1,4 @@
-# DemoBlaze Automation
+# DemoBlaze Automation Test
 
 [![E2E Tests](https://github.com/HuyLoda1008/demoblaze-automation/actions/workflows/e2e.yml/badge.svg)](https://github.com/HuyLoda1008/demoblaze-automation/actions/workflows/e2e.yml)
 
