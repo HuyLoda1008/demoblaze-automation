@@ -1,7 +1,7 @@
 # Matches the @playwright/test version pinned in package.json -- the
 # browsers baked into this image must match the npm package version or
 # `npx playwright test` refuses to run.
-FROM mcr.microsoft.com/playwright:v1.62.0-noble
+FROM mcr.microsoft.com/playwright:v1.63.0-noble
 
 WORKDIR /app
 
